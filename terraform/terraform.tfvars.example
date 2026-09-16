@@ -1,0 +1,9 @@
+aws_region    = "us-east-1"
+instance_type = "t3.large"
+
+# Leave ssh_cidr empty to keep port 22 closed and use SSM Session Manager.
+# ssh_cidr     = "203.0.113.10/32"
+# ssh_key_name = "my-keypair"
+
+# Set to auto-clone and start the app on first boot.
+# app_repo_url = "https://github.com/you/keplerlearn.git"
