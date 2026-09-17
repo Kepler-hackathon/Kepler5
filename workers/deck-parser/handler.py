@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import uuid
@@ -86,14 +87,33 @@ def _probe() -> dict:
 
 # ─── Slide extraction helpers ─────────────────────────────────────────────────
 
+_SKIP_PLACEHOLDER_TYPES = None  # populated lazily below, once PP_PLACEHOLDER is importable
+
+
 def _extract_pptx_slides(path: str) -> list[dict]:
     from pptx import Presentation
+    from pptx.enum.shapes import PP_PLACEHOLDER
+
+    global _SKIP_PLACEHOLDER_TYPES
+    if _SKIP_PLACEHOLDER_TYPES is None:
+        # Slide-number/date/footer/header placeholders aren't real slide content — without
+        # skipping them, their text (often just a bare page number like "45") gets appended as
+        # its own line at the end of every slide's extracted text, showing up as unexplained
+        # noise wherever that text is rendered or fed to the generator.
+        _SKIP_PLACEHOLDER_TYPES = {
+            PP_PLACEHOLDER.SLIDE_NUMBER,
+            PP_PLACEHOLDER.DATE,
+            PP_PLACEHOLDER.FOOTER,
+            PP_PLACEHOLDER.HEADER,
+        }
 
     prs = Presentation(path)
     slides = []
     for i, slide in enumerate(prs.slides):
         text_parts = []
         for shape in slide.shapes:
+            if shape.is_placeholder and shape.placeholder_format.type in _SKIP_PLACEHOLDER_TYPES:
+                continue
             if hasattr(shape, "text") and shape.text.strip():
                 text_parts.append(shape.text.strip())
         text = "\n".join(text_parts)
@@ -109,13 +129,28 @@ def _extract_pptx_slides(path: str) -> list[dict]:
     return slides
 
 
+_PAGE_NUMBER_LINE_RE = re.compile(r"^\s*\d{1,4}\s*$")
+
+
+def _strip_trailing_page_number(text: str) -> str:
+    """Decks exported to PDF (e.g. PowerPoint's "Save as PDF") bake the printed page-number
+    footer into the page's own text stream — PyMuPDF's get_text() has no way to distinguish it
+    from real content, so it shows up as a bare number on its own trailing line (e.g. "45" after
+    the last real bullet). Strip it — a real slide practically never legitimately ends on a
+    standalone 1-4 digit line by itself."""
+    lines = text.rstrip().split("\n")
+    while lines and _PAGE_NUMBER_LINE_RE.match(lines[-1]):
+        lines.pop()
+    return "\n".join(lines)
+
+
 def _extract_pdf_pages(path: str) -> list[dict]:
     import fitz
 
     doc = fitz.open(path)
     pages = []
     for i in range(len(doc)):
-        text = doc[i].get_text()
+        text = _strip_trailing_page_number(doc[i].get_text())
         pages.append({"index": i, "title": f"Page {i + 1}", "text": text, "notes": ""})
     return pages
 
