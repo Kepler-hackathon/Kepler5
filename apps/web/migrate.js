@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Entry point for infra/scripts/migrate.sh (backend-plan.md §13: migrations as a one-off ECS task).
 // Build step 1 replaces the body with `drizzle-kit migrate` (packages/db). Until then it only
 // proves the task can start and reach Postgres, so the deploy pipeline is exercised end to end.

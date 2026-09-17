@@ -1,11 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "preserve",
@@ -16,33 +12,24 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@kepler/db": [
-        "../../packages/db/src/index.ts"
-      ],
-      "@kepler/contracts": [
-        "../../packages/contracts/src/index.ts"
-      ],
-      "@kepler/prompts": [
-        "../../packages/prompts/src/index.ts"
-      ],
-      "@kepler/widgets": [
-        "../../packages/widgets/src/index.ts"
-      ]
+      "@/*": ["./src/*"],
+      "@kepler/db": ["../../packages/db/src/index.ts"],
+      "@kepler/contracts": ["../../packages/contracts/src/index.ts"],
+      "@kepler/prompts": ["../../packages/prompts/src/index.ts"],
+      "@kepler/widgets": ["../../packages/widgets/src/index.ts"]
     },
     "allowJs": true,
     "noEmit": true,
+    "noUncheckedIndexedAccess": false,
     "isolatedModules": true
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next-env.d.ts"
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
