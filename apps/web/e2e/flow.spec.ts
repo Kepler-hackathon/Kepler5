@@ -44,6 +44,28 @@ test("slide viewer — renders without crash, shows slide text or image", async 
   await expect(page.getByRole("button", { name: "Next slide" })).toBeVisible({ timeout: 12000 });
 });
 
+// ─── Slide image rendering ─────────────────────────────────────────────────
+test("slide viewer — renders rasterized PNG image (not text fallback)", async ({ page }) => {
+  await seedIdentity(page);
+  await page.goto(`/lecture/${LECTURE_ID}`);
+
+  // Wait for nav buttons → viewer is mounted
+  await expect(page.getByRole("button", { name: "Next slide" })).toBeVisible({ timeout: 12000 });
+
+  // The slide stage should show an <img> served via /api/assets/
+  const slideImg = page.locator('img[src*="/api/assets/slides/"]');
+  await expect(slideImg).toBeVisible({ timeout: 5000 });
+
+  // Image should be a valid src (not broken)
+  const src = await slideImg.getAttribute("src");
+  expect(src).toMatch(/\/api\/assets\/slides\/.+\/\d+\.png/);
+
+  // Fetch the actual image to confirm it's a real PNG
+  const imgResp = await page.request.get(src!);
+  expect(imgResp.status()).toBe(200);
+  expect(imgResp.headers()["content-type"]).toBe("image/png");
+});
+
 // ─── Slide navigation ─────────────────────────────────────────────────────────
 test("slide viewer — next/prev navigation works", async ({ page }) => {
   await seedIdentity(page);
