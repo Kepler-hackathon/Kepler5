@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { streamText, convertToCoreMessages } from 'ai'
 import { db, chatThreads, chatMessages, lectures, slides, modules, courses, generationJobs } from '@kepler/db'
 import { eq, desc, asc, and } from 'drizzle-orm'
@@ -7,6 +6,7 @@ import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
 import { checkChatBudget } from '@/lib/budget'
 import { enqueueJob } from '@/lib/sqs'
+import { bedrock } from '@/lib/bedrock'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,8 +44,6 @@ export async function GET(
     })),
   )
 }
-
-const bedrock = createAmazonBedrock({ region: process.env.AWS_REGION ?? 'us-east-1' })
 
 async function buildSystemPrompt(scope: string, scopeId: string | null): Promise<string> {
   if (!scopeId) return 'You are a helpful AI learning assistant.'

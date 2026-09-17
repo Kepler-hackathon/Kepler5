@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateObject } from 'ai'
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { z } from 'zod'
 import { db, faqThreads, modules } from '@kepler/db'
 import { resolveTag } from '@kepler/db'
 import { eq, and, desc, sql, ne } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
+import { bedrock } from '@/lib/bedrock'
 
 export const dynamic = 'force-dynamic'
-
-const bedrock = createAmazonBedrock({ region: process.env.AWS_REGION ?? 'us-east-1' })
 
 const classificationSchema = z.object({
   class: z.enum(['question', 'logistics', 'spam']),
