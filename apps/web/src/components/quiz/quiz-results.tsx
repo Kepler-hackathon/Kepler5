@@ -6,6 +6,9 @@ import { CaretDown, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { CheckGlyph, TriangleExclamationGlyph, DashGlyph } from "@/components/ui/status-icons";
+import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
+import { ConceptSliderWidget } from "@/components/widgets/concept-slider-widget";
+import { PredictCheckWidget } from "@/components/widgets/predict-check-widget";
 import type { ArenaResult } from "./quiz-arena";
 
 function ResultRow({
@@ -72,11 +75,40 @@ function ResultRow({
           {loading ? (
             <CircleNotch className="size-4 animate-spin text-muted" />
           ) : expandMode === "widget" ? (
-            <div className="space-y-2">
-              <p className="text-[12px] font-medium font-body uppercase tracking-[0.5px] text-accent-text">Interactive explanation</p>
-              <p className="text-[13px] leading-relaxed text-body font-body">
-                {result.explanationMd ?? "No explanation available."}
-              </p>
+            <div className="space-y-3">
+              {(() => {
+                const pick = (result.question.id.charCodeAt(0) ?? 0) % 3;
+                if (pick === 1) {
+                  return (
+                    <ConceptSliderWidget
+                      title="Concept growth"
+                      description="See how cost scales with input size."
+                      variable="n"
+                      unit="elements"
+                      min={1}
+                      max={20}
+                      defaultValue={10}
+                      series={[{ label: "O(n)", color: "#cc785c" }, { label: "O(n²)", color: "#5db872" }]}
+                      seriesValues={[
+                        Array.from({ length: 20 }, (_, i) => i + 1),
+                        Array.from({ length: 20 }, (_, i) => (i + 1) * (i + 1)),
+                      ]}
+                    />
+                  );
+                }
+                if (pick === 2) {
+                  return (
+                    <PredictCheckWidget
+                      title="Check your understanding"
+                      scenario={result.question.promptMd}
+                      options={result.question.options.map((o) => ({ id: o.key, label: o.text }))}
+                      correctId={result.correctKey ?? ""}
+                      explanation={result.explanationMd ?? "No explanation available."}
+                    />
+                  );
+                }
+                return <TraceStepperWidget />;
+              })()}
             </div>
           ) : (
             <p className="text-[13px] leading-relaxed text-body font-body">

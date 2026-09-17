@@ -244,7 +244,13 @@ export function ModuleDetail({ courseId, moduleId }: { courseId: string; moduleI
               <p className="text-[15px] font-medium font-body text-ink">Generate a practice quiz from this module</p>
               <p className="text-[13px] font-body text-muted mt-0.5">AI-generated questions grounded in this module&rsquo;s lectures.</p>
             </div>
-            <Button variant="primary" onClick={() => router.push(`/quizzes?module=${moduleId}`)}>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const ids = (lectures ?? []).map((l) => l.id).join(",");
+                router.push(ids ? `/quizzes?lectures=${ids}` : "/quizzes");
+              }}
+            >
               Build Quiz
             </Button>
           </div>

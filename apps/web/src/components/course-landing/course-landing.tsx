@@ -20,6 +20,11 @@ interface ApiCourse {
   instructorName: string | null;
 }
 
+interface LectureProgress {
+  id: string;
+  progress?: { completedAt: string | null } | null;
+}
+
 export function CourseLanding({ courseId }: { courseId: string }) {
   const identity = useIdentity();
   const [course, setCourse] = React.useState<ApiCourse | null>(null);
@@ -27,6 +32,8 @@ export function CourseLanding({ courseId }: { courseId: string }) {
   const [reviewPendingCount, setReviewPendingCount] = React.useState<number | undefined>(undefined);
   const [error, setError] = React.useState<string | null>(null);
   const [view, setView] = React.useState<"grid" | "flow">("grid");
+  const [lectureStats, setLectureStats] = React.useState<{ total: number; completed: number } | null>(null);
+  const [openQuestionCount, setOpenQuestionCount] = React.useState<number>(0);
 
   const load = React.useCallback(() => {
     setError(null);
@@ -34,10 +41,27 @@ export function CourseLanding({ courseId }: { courseId: string }) {
       apiJson<{ courses: ApiCourse[] }>("/api/courses").then((d) => d.courses.find((c) => c.id === courseId) ?? null),
       apiJson<{ modules: ApiModule[]; reviewPendingCount?: number }>(`/api/course?courseId=${courseId}`),
     ])
-      .then(([foundCourse, moduleData]) => {
+      .then(async ([foundCourse, moduleData]) => {
         setCourse(foundCourse);
         setModules(moduleData.modules);
         setReviewPendingCount(moduleData.reviewPendingCount);
+        // Fetch lecture completion counts for all published modules
+        const published = moduleData.modules.filter((m) => m.status === "published");
+        if (published.length > 0) {
+          const allLectures = await Promise.all(
+            published.map((m) =>
+              apiJson<LectureProgress[]>(`/api/modules/${m.id}/lectures`).catch(() => [] as LectureProgress[])
+            )
+          ).then((arrays) => arrays.flat());
+          setLectureStats({
+            total: allLectures.length,
+            completed: allLectures.filter((l) => l.progress?.completedAt).length,
+          });
+        }
+        // Fetch open question count
+        apiJson<{ threads: unknown[] }>(`/api/faq/threads?limit=50`)
+          .then((d) => setOpenQuestionCount(d.threads.length))
+          .catch(() => {});
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load course"));
   }, [courseId]);
@@ -94,23 +118,25 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                 {[course?.instructorName, course?.term].filter(Boolean).join(" · ")}
               </p>
 
-              {/* Course-level progress bar */}
-              {modules && modules.length > 0 ? (() => {
-                const published = modules.filter((m) => m.status === "published").length;
-                const total = modules.length;
-                const pct = total > 0 ? Math.round((published / total) * 100) : 0;
-                return (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[13px] font-body text-muted">{published} of {total} modules published</span>
-                      <span className="text-[13px] font-body text-muted">{pct}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
-                      <div className="h-full rounded-full bg-button-primary transition-all" style={{ width: `${pct}%` }} />
-                    </div>
+              {/* Course-level progress bar — lecture completion */}
+              {lectureStats && lectureStats.total > 0 ? (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[13px] font-body text-muted">
+                      {lectureStats.completed} of {lectureStats.total} lectures completed
+                    </span>
+                    <span className="text-[13px] font-body text-muted">
+                      {Math.round((lectureStats.completed / lectureStats.total) * 100)}%
+                    </span>
                   </div>
-                );
-              })() : null}
+                  <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-button-primary transition-all"
+                      style={{ width: `${Math.round((lectureStats.completed / lectureStats.total) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               {/* Highlight chips */}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -118,7 +144,7 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                   href={`/course/${courseId}/forum`}
                   className="rounded-full border border-hairline bg-surface-card px-3 py-1.5 text-[13px] font-body text-ink hover:border-accent-text/50"
                 >
-                  Open Questions on Recent Slides
+                  {openQuestionCount > 0 ? `${openQuestionCount} ` : ""}Open Questions on Recent Slides
                 </Link>
                 {role === "teacher" && reviewPendingCount ? (
                   <span className="rounded-full border border-[#bb5a3a]/30 bg-[#bb5a3a]/10 px-3 py-1.5 text-[13px] text-[#bb5a3a] font-body">

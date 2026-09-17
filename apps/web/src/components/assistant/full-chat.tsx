@@ -57,6 +57,8 @@ function ConversationList({
   );
 }
 
+interface ScopeModule { id: string; name: string }
+
 /** The actual chat surface for one real thread — keyed by threadId in the parent so
  * switching threads remounts this with the right initialMessages (useChat's id is an
  * SWR-style cache key, initialMessages only applies on first mount for a given id). */
@@ -65,11 +67,17 @@ function ThreadChat({
   initialMessages,
   headers,
   onFinish,
+  modules,
+  scope,
+  onScopeChange,
 }: {
   threadId: string;
   initialMessages: Message[];
   headers: Record<string, string>;
   onFinish: () => void;
+  modules: ScopeModule[];
+  scope: string;
+  onScopeChange: (scope: string, scopeId: string | null) => void;
 }) {
   const { messages, input, setInput, handleSubmit, isLoading, stop, append } = useChat({
     id: threadId,
@@ -98,7 +106,21 @@ function ThreadChat({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2 border-b border-hairline px-6 py-2">
         <span className="text-[12px] font-medium font-body text-muted uppercase tracking-[0.5px]">Scope</span>
-        <span className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[12px] font-body text-ink">Course-wide</span>
+        <select
+          value={scope}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "course") { onScopeChange("course", null); return; }
+            const mod = modules.find((m) => m.id === val);
+            if (mod) onScopeChange("module", mod.id);
+          }}
+          className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[12px] font-body text-ink focus:outline-none cursor-pointer"
+        >
+          <option value="course">Course-wide</option>
+          {modules.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
       </div>
       <div ref={listRef} onScroll={onScroll} className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
         {isEmpty ? (
@@ -196,6 +218,9 @@ export function FullChat({ courseId }: { courseId: string; continuedFrom?: { lec
   const [initialMessages, setInitialMessages] = React.useState<Message[]>([]);
   const [listDrawerOpen, setListDrawerOpen] = React.useState(false);
   const [citedLectureIds, setCitedLectureIds] = React.useState<string[]>([]);
+  const [scopeModules, setScopeModules] = React.useState<ScopeModule[]>([]);
+  // scopeSelectValue: "course" | moduleId — drives the <select> value in ThreadChat
+  const [scopeSelectValue, setScopeSelectValue] = React.useState<string>("course");
 
   const headers = React.useMemo<Record<string, string>>(() => {
     const h: Record<string, string> = {};
@@ -220,24 +245,34 @@ export function FullChat({ courseId }: { courseId: string; continuedFrom?: { lec
     setActiveId(id);
     const cited = await apiJson<{ lectureIds: string[] }>(`/api/chat/threads/${id}/cited-lectures`).catch(() => ({ lectureIds: [] }));
     setCitedLectureIds(cited.lectureIds);
+    const threadMeta = await apiJson<ChatThread>(`/api/chat/threads/${id}`).catch(() => null);
+    if (threadMeta) {
+      setScopeSelectValue(threadMeta.scope === "module" && threadMeta.scopeId ? threadMeta.scopeId : "course");
+    }
   }, [identity]);
 
-  const startNewChat = React.useCallback(async () => {
+  const startNewChat = React.useCallback(async (scope?: string, scopeId?: string | null) => {
     if (!identity) return;
+    const resolvedScope = scope ?? "course";
+    const resolvedScopeId = resolvedScope === "course" ? (courseId || null) : (scopeId ?? null);
     const thread = await apiJson<ChatThread>("/api/chat/threads", {
       method: "POST",
-      body: JSON.stringify({ scope: "course", scopeId: courseId || null }),
+      body: JSON.stringify({ scope: resolvedScope, scopeId: resolvedScopeId }),
     });
     setThreads((prev) => [thread, ...prev]);
     setInitialMessages([]);
     setActiveId(thread.id);
     setCitedLectureIds([]);
+    setScopeSelectValue(resolvedScope === "module" && resolvedScopeId ? resolvedScopeId : "course");
     setListDrawerOpen(false);
   }, [identity, courseId]);
 
   React.useEffect(() => {
     if (!identity) return;
     (async () => {
+      apiJson<{ modules: ScopeModule[] }>(`/api/course?courseId=${courseId}`)
+        .then((d) => setScopeModules(d.modules.map((m) => ({ id: m.id, name: m.name }))))
+        .catch(() => {});
       const list = await loadThreads();
       if (list.length > 0) {
         await openThread(list[0]!.id);
@@ -267,7 +302,7 @@ export function FullChat({ courseId }: { courseId: string; continuedFrom?: { lec
       <AppNav courseId={courseId} course={null} activeHref="/assistant" />
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 border-r border-hairline p-4 lg:block">
-          <Button variant="secondary" size="sm" className="w-full justify-start gap-2" onClick={startNewChat}>
+          <Button variant="secondary" size="sm" className="w-full justify-start gap-2" onClick={() => startNewChat()}>
             <Plus className="size-4" /> New chat
           </Button>
           <ConversationList threads={threads} activeId={activeId} onSwitch={openThread} />
@@ -295,6 +330,9 @@ export function FullChat({ courseId }: { courseId: string; continuedFrom?: { lec
                 .then((c) => setCitedLectureIds(c.lectureIds))
                 .catch(() => {});
             }}
+            modules={scopeModules}
+            scope={scopeSelectValue}
+            onScopeChange={(s, sid) => startNewChat(s, sid)}
           />
 
           <div className="mx-auto w-full max-w-3xl px-6 pb-2">
@@ -318,7 +356,7 @@ export function FullChat({ courseId }: { courseId: string; continuedFrom?: { lec
                 <X className="size-4" />
               </button>
             </div>
-            <Button variant="secondary" size="sm" className="w-full justify-start gap-2" onClick={startNewChat}>
+            <Button variant="secondary" size="sm" className="w-full justify-start gap-2" onClick={() => startNewChat()}>
               <Plus className="size-4" /> New chat
             </Button>
             <ConversationList threads={threads} activeId={activeId} onSwitch={openThread} onSelect={() => setListDrawerOpen(false)} />
