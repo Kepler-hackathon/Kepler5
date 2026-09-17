@@ -205,6 +205,60 @@ def _vec_str(embedding: list[float]) -> str:
     return "[" + ",".join(str(x) for x in embedding) + "]"
 
 
+# ─── Slide rasterization ─────────────────────────────────────────────────────
+
+def _rasterize_deck(local_path: str, is_pptx: bool, lecture_id: str) -> list[str]:
+    """Render each slide/page as a PNG, upload to ASSETS_BUCKET, return list of S3 keys.
+    Returns empty list if ASSETS_BUCKET is not set or rasterization fails non-fatally."""
+    if not ASSETS_BUCKET:
+        return []
+
+    import fitz  # PyMuPDF — already in image
+
+    pdf_path = local_path
+    if is_pptx:
+        exe = shutil.which("soffice") or shutil.which("libreoffice")
+        if not exe:
+            return []
+        subprocess.run(
+            [exe, "--headless", "--convert-to", "pdf", "--outdir", "/tmp", local_path],
+            capture_output=True, timeout=120,
+        )
+        stem = Path(local_path).stem
+        candidate = f"/tmp/{stem}.pdf"
+        if not Path(candidate).exists():
+            return []
+        pdf_path = candidate
+
+    try:
+        doc = fitz.open(pdf_path)
+    except Exception:  # noqa: BLE001
+        return []
+
+    s3 = _s3()
+    image_keys: list[str] = []
+
+    for i in range(len(doc)):
+        try:
+            page = doc[i]
+            mat = fitz.Matrix(2.0, 2.0)  # 2× for retina
+            pix = page.get_pixmap(matrix=mat)
+            png_bytes = pix.tobytes("png")
+            key = f"slides/{lecture_id}/{i}.png"
+            s3.put_object(
+                Bucket=ASSETS_BUCKET,
+                Key=key,
+                Body=png_bytes,
+                ContentType="image/png",
+                CacheControl="public, max-age=31536000, immutable",
+            )
+            image_keys.append(key)
+        except Exception:  # noqa: BLE001
+            image_keys.append("")  # keep index alignment
+
+    return image_keys
+
+
 # ─── parse task ───────────────────────────────────────────────────────────────
 
 def parse(event: dict) -> dict:
@@ -274,19 +328,24 @@ def parse(event: dict) -> dict:
         else:
             slides_data = _extract_pdf_pages(local_path)
 
+        # 6b. Rasterize slides to images and upload to ASSETS_BUCKET
+        image_keys = _rasterize_deck(local_path, is_pptx, lecture_id)
+
         # 7–9. Write slides and update status in one transaction
         with _connect() as conn:
             now_sql = "NOW()"
             for slide in slides_data:
                 slide_id = str(uuid.uuid4())
+                idx = slide["index"]
+                image_key = image_keys[idx] if idx < len(image_keys) and image_keys[idx] else None
                 conn.execute(
                     """
-                    INSERT INTO slides (id, lecture_id, index, text, notes, text_source, created_at)
-                    VALUES (%s, %s, %s, %s, %s, 'pptx', NOW())
+                    INSERT INTO slides (id, lecture_id, index, text, notes, text_source, image_key, created_at)
+                    VALUES (%s, %s, %s, %s, %s, 'pptx', %s, NOW())
                     ON CONFLICT (lecture_id, index) WHERE NOT is_supplementary AND deleted_at IS NULL
-                    DO UPDATE SET text = EXCLUDED.text, notes = EXCLUDED.notes
+                    DO UPDATE SET text = EXCLUDED.text, notes = EXCLUDED.notes, image_key = EXCLUDED.image_key
                     """,
-                    (slide_id, lecture_id, slide["index"], slide["text"], slide["notes"]),
+                    (slide_id, lecture_id, idx, slide["text"], slide["notes"], image_key),
                 )
 
             n = len(slides_data)

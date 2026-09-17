@@ -2,11 +2,25 @@
 
 import type { ApiSlide } from "./types";
 
-// Real slide content is raw text extracted by deck-parser (workers/deck-parser/handler.py)
-// via python-pptx/PyMuPDF — there's no AI restructuring step producing the polished
-// {title, bullets, code, takeaway} shape the original mock UI assumed, and no rendered
-// slide image pipeline (imageKey/thumbKey are never populated). Render the text directly.
+const ASSETS_BASE = process.env.NEXT_PUBLIC_ASSETS_CDN_URL || "/api/assets";
+
 export function SlideStage({ slide }: { slide: ApiSlide }) {
+  const imageUrl = slide.imageKey ? `${ASSETS_BASE}/${slide.imageKey}` : null;
+
+  if (imageUrl) {
+    return (
+      <div className="relative w-full overflow-hidden rounded-[var(--radius-card)] bg-surface-dark">
+        <img
+          src={imageUrl}
+          alt={`Slide ${slide.index != null ? slide.index + 1 : "—"}${slide.isSupplementary ? " (supplementary)" : ""}`}
+          className="block w-full h-auto"
+          draggable={false}
+        />
+      </div>
+    );
+  }
+
+  // Fallback: render extracted text when no image is available yet
   return (
     <div className="flex h-full flex-col justify-center rounded-[var(--radius-card)] bg-canvas px-10 py-10 sm:px-14">
       <p className="text-[13px] font-medium font-body uppercase tracking-[1px] text-accent-text">
