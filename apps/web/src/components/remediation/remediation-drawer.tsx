@@ -5,9 +5,11 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { SkeletonWidget } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
+import { SparkGlyph } from "@/components/ui/status-icons";
 import { PublishDialog } from "./publish-dialog";
 import { useGenerationTiming } from "@/lib/ai/simulate-stream";
 import { useToast } from "@/components/ui/toast";
+import type { QuizQuestion } from "@/lib/data/types";
 
 /**
  * Screen 5 — Contextual AI Generation Drawer (frontend plan Part III §3, S5).
@@ -22,11 +24,19 @@ export function RemediationDrawer({
   open,
   onOpenChange,
   slideLabel,
+  question,
   onLoadingChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   slideLabel: string;
+  /** The question the student just missed. Its explanation is real, question-generation-time
+   * AI content (grounded in the actual lecture slide) — showing that instead of a fixed demo
+   * widget is what makes this drawer actually about the mistake the student made, not the same
+   * unrelated "treeHeight recursion" trace every time (there's no backend step today that
+   * generates a fresh interactive widget per-mistake — see docs/ui/screens_breakdown.md
+   * Screen 5's latency-handling note, which assumes that step exists; it doesn't yet). */
+  question?: QuizQuestion | null;
   onLoadingChange?: (loading: boolean) => void;
 }) {
   const [published, setPublished] = React.useState(false);
@@ -117,7 +127,22 @@ export function RemediationDrawer({
         </p>
       </div>
     );
+  } else if (question) {
+    content = (
+      <div className="space-y-4 py-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-button-primary px-2.5 py-1 text-[10px] font-semibold font-body uppercase tracking-[1.5px] text-on-primary">
+          <SparkGlyph className="size-3" />
+          AI generated
+        </span>
+        <p className="text-[13px] font-medium font-body uppercase tracking-[0.5px] text-muted">Why this answer is correct</p>
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-body font-body">
+          {question.correctExplanation || "No explanation was generated for this question."}
+        </p>
+        <div className="flex justify-end pt-2">{publishTrigger}</div>
+      </div>
+    );
   } else {
+    // Defensive fallback for the rare case this drawer opens without a question attached.
     content = (
       <TraceStepperWidget
         published={published}
