@@ -75,16 +75,23 @@ function isTypingTarget(el: EventTarget | null) {
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable;
 }
 
-export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; initialSlide: number }) {
+interface ApiProgress {
+  lectureId: string;
+  maxSlideIndex: number;
+}
+
+export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; initialSlide: number | null }) {
   const router = useRouter();
   const [lecture, setLecture] = React.useState<ApiLecture | null>(null);
   const [module, setModule] = React.useState<ApiModule | null>(null);
   const [bundle, setBundle] = React.useState<Bundle | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [resumeSlide, setResumeSlide] = React.useState<number | null>(null);
 
   const [quizAnswers, setQuizAnswers] = React.useState<Record<string, QuizAnswer>>({});
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [drawerSlideLabel, setDrawerSlideLabel] = React.useState("");
+  const [drawerQuestion, setDrawerQuestion] = React.useState<QuizQuestion | null>(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [fullscreen, setFullscreen] = React.useState(false);
   const [presenting, setPresenting] = React.useState(false);
@@ -103,20 +110,36 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
     apiJson<Bundle>(`/api/lectures/${lectureId}/bundle`)
       .then((b) => !cancelled && setBundle(b))
       .catch((err) => !cancelled && setError(err instanceof ApiError ? err.message : "Failed to load slides"));
+    // No ?slide= in the URL — this is "Start"/"Resume Lecture", not a deep link, so look up
+    // where the student last left off instead of always opening at slide 1. GET /api/progress
+    // has no per-lecture filter, so fetch the full list and pick this lecture's row.
+    if (initialSlide === null) {
+      apiJson<ApiProgress[]>("/api/progress")
+        .then((rows) => {
+          if (cancelled) return;
+          const row = rows.find((r) => r.lectureId === lectureId);
+          if (row) setResumeSlide(row.maxSlideIndex + 1);
+        })
+        .catch(() => {
+          // Resuming is a nice-to-have — fall through to starting at slide 1.
+        });
+    }
     return () => {
       cancelled = true;
     };
-  }, [lectureId]);
+  }, [lectureId, initialSlide]);
 
   const stops = React.useMemo(() => (bundle ? buildStops(bundle.slides, bundle.items) : []), [bundle]);
+  const targetSlide = initialSlide ?? resumeSlide ?? 1;
 
   React.useEffect(() => {
     if (!stops.length) return;
-    const idx = stops.findIndex((s) => s.kind === "slide" && (s.slide.index ?? 0) + 1 === initialSlide);
+    const idx = stops.findIndex((s) => s.kind === "slide" && (s.slide.index ?? 0) + 1 === targetSlide);
     setStopIndex(Math.max(0, idx));
-    // Only recompute the initial position once stops first become available.
+    // Recompute once stops first become available, and again if a resume lookup resolves
+    // after that (targetSlide starts at 1 and may jump once /api/progress responds).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stops.length > 0]);
+  }, [stops.length > 0, targetSlide]);
 
   const stop = stops[stopIndex];
   const totalSlides = bundle ? bundle.slides.filter((s) => !s.isSupplementary).length : 0;
@@ -124,22 +147,36 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
   // A quiz/complete stop has no slide of its own — it's anchored after a slide, not at
   // totalSlides. Scan backward for the nearest preceding "slide" stop so the scrubber tracks
   // where the interstitial actually sits in the lecture instead of jumping to the end.
-  const currentSlideNumber = React.useMemo(() => {
+  const nearestSlideStop = React.useMemo(() => {
     // stops can be [] (still loading) while stopIndex hasn't caught up yet, or stopIndex can
     // momentarily point past the end of a freshly-recomputed stops array — stops[i] is safely
     // undefined in either case, same as the `stop?.kind` optional chaining this replaced.
     for (let i = Math.min(stopIndex, stops.length - 1); i >= 0; i--) {
       const s = stops[i];
-      if (s?.kind === "slide") return (s.slide.index ?? 0) + 1;
+      if (s?.kind === "slide") return s.slide;
     }
-    return totalSlides;
-  }, [stops, stopIndex, totalSlides]);
+    return null;
+  }, [stops, stopIndex]);
+  const currentSlideNumber = nearestSlideStop ? (nearestSlideStop.index ?? 0) + 1 : totalSlides;
+  const currentSlideId = nearestSlideStop?.id ?? null;
 
   React.useEffect(() => {
     if (stop?.kind === "slide") {
       router.replace(`?slide=${(stop.slide.index ?? 0) + 1}`, { scroll: false });
     }
   }, [stop, router]);
+
+  // Record how far the student has gotten, so "Resume"/"Start Lecture" picks up where they
+  // left off (see the /api/progress lookup above) instead of always restarting at slide 1.
+  React.useEffect(() => {
+    if (!currentSlideId) return;
+    apiJson(`/api/progress/${lectureId}`, {
+      method: "PUT",
+      body: JSON.stringify({ lastSlideId: currentSlideId, slideIndex: currentSlideNumber }),
+    }).catch(() => {
+      // Best-effort — a failed progress write shouldn't interrupt viewing.
+    });
+  }, [lectureId, currentSlideId, currentSlideNumber]);
 
   const canGoPrev = stopIndex > 0;
   const canGoNext = stopIndex < stops.length - 1;
@@ -192,10 +229,11 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
     );
   }
 
-  function handleAnswer(questionId: string, answer: QuizAnswer, slideLabel: string) {
-    setQuizAnswers((prev) => ({ ...prev, [questionId]: answer }));
+  function handleAnswer(question: QuizQuestion, answer: QuizAnswer, slideLabel: string) {
+    setQuizAnswers((prev) => ({ ...prev, [question.id]: answer }));
     if (!answer.correct) {
       setDrawerSlideLabel(slideLabel);
+      setDrawerQuestion(question);
       setDrawerOpen(true);
     }
   }
@@ -230,11 +268,12 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
               <QuizInterstitial
                 question={stop.question}
                 previousAnswer={quizAnswers[stop.question.id] ?? null}
-                onAnswer={(answer) => handleAnswer(stop.question.id, answer, `Slide ${currentSlideNumber}`)}
+                onAnswer={(answer) => handleAnswer(stop.question, answer, `Slide ${currentSlideNumber}`)}
                 onContinue={goNext}
                 onSkip={goNext}
                 onViewExplanation={() => {
                   setDrawerSlideLabel(`Slide ${currentSlideNumber}`);
+                  setDrawerQuestion(stop.question);
                   setDrawerOpen(true);
                 }}
                 explanationLoading={explanationPending}
@@ -275,13 +314,24 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
             </button>
           </div>
           <div className="h-[calc(100%-49px)] xl:h-full">
-            {/* Real FAQ threads for this slide/lecture are wired separately (forum feature area). */}
-            <Sidebar slideNumber={currentSlideNumber} lectureNumber={lecture.orderIndex} faqThreads={[]} />
+            <Sidebar
+              slideNumber={currentSlideNumber}
+              lectureNumber={lecture.orderIndex}
+              moduleId={lecture.moduleId}
+              lectureId={lectureId}
+              slideId={currentSlideId}
+            />
           </div>
         </div>
       </div>
 
-      <RemediationDrawer open={drawerOpen} onOpenChange={setDrawerOpen} slideLabel={drawerSlideLabel} onLoadingChange={setExplanationPending} />
+      <RemediationDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        slideLabel={drawerSlideLabel}
+        question={drawerQuestion}
+        onLoadingChange={setExplanationPending}
+      />
 
       {presenting ? (
         <PresenterMode

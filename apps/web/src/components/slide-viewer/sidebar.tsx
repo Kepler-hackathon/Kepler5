@@ -1,16 +1,19 @@
 import { Tabs, TabList, TabTrigger, TabPanel } from "@/components/ui/tabs";
 import { FaqTab } from "./faq-tab";
 import { CopilotTab } from "@/components/copilot/copilot-tab";
-import type { FaqThread } from "@/lib/data/types";
 
 export function Sidebar({
   slideNumber,
   lectureNumber,
-  faqThreads,
+  moduleId,
+  lectureId,
+  slideId,
 }: {
   slideNumber: number;
   lectureNumber: number;
-  faqThreads: FaqThread[];
+  moduleId: string;
+  lectureId: string;
+  slideId: string | null;
 }) {
   return (
     <Tabs defaultValue="faq" className="flex h-full flex-col">
@@ -21,10 +24,10 @@ export function Sidebar({
         </TabList>
       </div>
       <TabPanel value="faq" className="min-h-0 flex-1">
-        <FaqTab threads={faqThreads} slideNumber={slideNumber} lectureNumber={lectureNumber} />
+        <FaqTab moduleId={moduleId} lectureId={lectureId} slideId={slideId} slideNumber={slideNumber} lectureNumber={lectureNumber} />
       </TabPanel>
       <TabPanel value="copilot" className="min-h-0 flex-1">
-        <CopilotTab slideNumber={slideNumber} lectureNumber={lectureNumber} />
+        <CopilotTab lectureId={lectureId} slideId={slideId ?? undefined} slideNumber={slideNumber} lectureNumber={lectureNumber} />
       </TabPanel>
     </Tabs>
   );
