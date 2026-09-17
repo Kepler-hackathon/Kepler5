@@ -1,6 +1,11 @@
-import postgres from 'postgres';
+import { Pool } from 'pg';
 
-let sql: postgres.Sql | undefined;
+/**
+ * Postgres pool for the Fargate app (backend-plan.md §14.13 row 174: max 10 per task).
+ * The task definition injects DB_HOST/DB_PORT/DB_USER/DB_PASSWORD from the Aurora secret and
+ * DB_NAME as plain env; DATABASE_URL is honoured for local development.
+ */
+let pool: Pool | undefined;
 
 export function databaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -9,24 +14,15 @@ export function databaseUrl(): string {
   return `postgres://${encodeURIComponent(DB_USER)}:${encodeURIComponent(DB_PASSWORD)}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 }
 
-function getSql(): postgres.Sql {
-  if (!sql) {
-    sql = postgres(databaseUrl(), {
+export function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: databaseUrl(),
       max: 10,
-      idle_timeout: 30,
-      connect_timeout: 10,
-      ssl: process.env.DB_HOST ? 'require' : undefined,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+      ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : undefined,
     });
   }
-  return sql;
-}
-
-export function getPool() {
-  const client = getSql();
-  return {
-    async query<T extends Record<string, unknown>>(queryText: string): Promise<{ rows: T[] }> {
-      const rows = (await client.unsafe(queryText)) as T[];
-      return { rows };
-    },
-  };
+  return pool;
 }

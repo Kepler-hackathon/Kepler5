@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Runs drizzle-kit migrations at container startup (used by infra/scripts/migrate.sh).
 // Requires DATABASE_URL or DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME env vars.
 const { execSync } = require('child_process');

@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/*
+  KeplerLearn design tokens — Claude-editorial warm canvas (finalized D1).
+  Values are the ACCESSIBLE replacements from frontend_design_plan.md §3.2,
+  not the raw design_system.md originals. Originals stay reserved for
+  fills/icons/decoration only, never for text or text-bearing buttons.
+  See docs/ui/frontend_design_plan_student_track.md Part I §3 for the source.
+  (A University of Utah rebrand was tried and reverted per user feedback — the
+  "accent" token names stayed generic rather than being renamed back to "coral"
+  so a future palette swap doesn't require another rename.)
+*/
+:root {
+  /* Surfaces — brand pacing cadence: cream canvas -> cream cards -> dark widget chrome */
+  --color-canvas: #faf9f5;
+  --color-surface-soft: #f5f0e8;
+  --color-surface-card: #efe9de;
+  --color-surface-cream-strong: #e8e0d2;
+  --color-surface-dark: #181715;
+  --color-surface-dark-elevated: #252320;
+  --color-surface-dark-soft: #1f1e1b;
+
+  /* Borders */
+  --color-hairline: #e6dfd8;
+  --color-hairline-soft: #ebe6df;
+  --color-heatmap-border: #9c8165;
+
+  /* Ink & body text */
+  --color-ink: #141413;
+  --color-body: #3d3d3a;
+  --color-body-strong: #252523;
+  --color-muted: #65645e;
+  --color-muted-soft: #6c6962;
+  --color-muted-soft-on-dark: #8e8b82;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #faf9f5;
+  --color-on-dark-soft: #a09d96;
+
+  /* Coral — decoration/icon only at full saturation; accessible variants for text/buttons */
+  --color-accent: #cc785c;
+  --color-button-primary: #bb5a3a;
+  --color-button-primary-hover: #a9583e;
+  --color-accent-text: #a55034;
+
+  /* Success/green */
+  --color-success: #5db872;
+  --color-button-success: #3a844b;
+  --color-success-text: #347643;
+
+  /* Amber/warning */
+  --color-amber-fill: #e8a55a;
+  --color-warning-fill: #d4a017;
+  --color-warning-text: #995b15;
+
+  /* Error/red — already AA compliant as specified, used for fill and text */
+  --color-error: #c64545;
+
+  /* Fonts */
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-code: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
+
+  /* Radii — only 3 used per D-finalized decisions: control, card, pill */
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  /* Motion */
+  --duration-drawer: 240ms;
+  --duration-modal: 160ms;
+  --duration-tab: 120ms;
+  --duration-step: 200ms;
+  --ease-drawer: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface-soft: var(--color-surface-soft);
+  --color-surface-card: var(--color-surface-card);
+  --color-surface-cream-strong: var(--color-surface-cream-strong);
+  --color-surface-dark: var(--color-surface-dark);
+  --color-surface-dark-elevated: var(--color-surface-dark-elevated);
+  --color-surface-dark-soft: var(--color-surface-dark-soft);
+
+  --color-hairline: var(--color-hairline);
+  --color-hairline-soft: var(--color-hairline-soft);
+  --color-heatmap-border: var(--color-heatmap-border);
+
+  --color-ink: var(--color-ink);
+  --color-body: var(--color-body);
+  --color-body-strong: var(--color-body-strong);
+  --color-muted: var(--color-muted);
+  --color-muted-soft: var(--color-muted-soft);
+  --color-muted-soft-on-dark: var(--color-muted-soft-on-dark);
+  --color-on-primary: var(--color-on-primary);
+  --color-on-dark: var(--color-on-dark);
+  --color-on-dark-soft: var(--color-on-dark-soft);
+
+  --color-accent: var(--color-accent);
+  --color-button-primary: var(--color-button-primary);
+  --color-button-primary-hover: var(--color-button-primary-hover);
+  --color-accent-text: var(--color-accent-text);
+
+  --color-success: var(--color-success);
+  --color-button-success: var(--color-button-success);
+  --color-success-text: var(--color-success-text);
+
+  --color-amber-fill: var(--color-amber-fill);
+  --color-warning-fill: var(--color-warning-fill);
+  --color-warning-text: var(--color-warning-text);
+
+  --color-error: var(--color-error);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-code: var(--font-code);
+
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+}
+
+/* There is no dark mode (frontend_design_plan.md §3.5) — dark surfaces are
+   product chrome only (widgets, code), never a page-level theme swap. */
+
+* {
+  border-color: var(--color-hairline);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--color-ink);
+}
+
+h1 {
+  font-size: 48px;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 36px;
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+h3 {
+  font-size: 24px;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+}
+
+/* Visible keyboard focus everywhere — 2px accent-text ring, 2px offset (§11 checklist) */
+:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Modal fade/scale (§3.6, 160ms) */
+@keyframes modal-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes modal-content-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes modal-content-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+}
+.dialog-overlay[data-state="open"] { animation: modal-overlay-in var(--duration-modal) ease-out; }
+.dialog-overlay[data-state="closed"] { animation: modal-overlay-out var(--duration-modal) ease-in; }
+.dialog-content[data-state="open"] { animation: modal-content-in var(--duration-modal) ease-out; }
+.dialog-content[data-state="closed"] { animation: modal-content-out var(--duration-modal) ease-in; }
+
+/* Drawer rise (§3.6, 240ms) */
+@keyframes drawer-rise-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes drawer-rise-out {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+.drawer-panel[data-state="open"] { animation: drawer-rise-in var(--duration-drawer) var(--ease-drawer); }
+.drawer-panel[data-state="closed"] { animation: drawer-rise-out var(--duration-drawer) var(--ease-drawer); }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
