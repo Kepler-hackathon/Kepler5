@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",
+    "@aws-sdk/credential-provider-node": "^3.700.0",
     "ai": "^4.3.16",
     "postgres": "^3.4.5",
     "uuidv7": "^1.2.1",
