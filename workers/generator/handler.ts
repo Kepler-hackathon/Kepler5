@@ -142,9 +142,22 @@ export async function finishRun(input: Record<string, unknown>): Promise<{ ok: b
     SELECT parse_status, gen_status FROM lecture_processing WHERE run_id = ${runId}
   `;
 
-  const allDone =
-    rows.length === 0 ||
-    rows.every((r) => r.gen_status === 'done' || r.gen_status === 'skipped');
+  const [modInfo] = await sql<{ ai_opt_in: boolean }[]>`
+    SELECT m.ai_opt_in
+    FROM processing_runs pr
+    JOIN modules m ON m.id = pr.module_id
+    WHERE pr.id = ${runId}
+  `;
+
+  // gen_status only ever leaves 'pending' via wizardGenerate — which is never invoked at all
+  // when the module didn't opt into AI content (local-worker.ts's `if (aiOptIn)` guard, and the
+  // SFN's AiOptIn? Choice → SkipGenerate Pass state in infra/lib/constructs/jobs.ts) — neither
+  // path writes gen_status='skipped' on the "opted out" branch. Without accounting for that
+  // here, every aiOptIn=false module's lecture rows sit at gen_status='pending' forever, so
+  // `allDone` below was always false and the module got stuck at 'needs_attention' even when
+  // parsing succeeded and there was never anything to generate.
+  const genSettled = (s: string) => !modInfo?.ai_opt_in || s === 'done' || s === 'skipped';
+  const allDone = rows.length === 0 || rows.every((r) => genSettled(r.gen_status));
   const moduleStatus = allDone ? 'ready_to_review' : 'needs_attention';
 
   const [run] = await sql<{ module_id: string }[]>`
