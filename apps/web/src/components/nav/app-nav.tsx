@@ -42,6 +42,7 @@ export function AppNav({
     { label: "Review Queue", href: `/course/${courseId}/review` },
     { label: "Analytics", href: `/course/${courseId}/analytics` },
     { label: "Forum", href: `${courseHref}/forum` },
+    { label: "Course Details", href: `/course/${courseId}/settings` },
   ];
 
   const tabs = role === "teacher" ? teacherTabs : studentTabs;
