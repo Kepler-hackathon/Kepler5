@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusIndicator } from "@/components/ui/status-indicator";
@@ -19,8 +20,9 @@ export function ModuleCard({ module: m, courseId, role = "student" }: { module: 
 
   return (
     <Card className="flex flex-col p-6">
-      <div className="mb-4 flex h-28 items-center justify-center rounded-[var(--radius-control)] bg-surface-soft">
-        <span className="font-display text-[40px] text-hairline">{String(m.orderIndex ?? "—").padStart(2, "0")}</span>
+      {/* Thumbnail placeholder */}
+      <div className="mb-4 flex h-28 items-center justify-center rounded-[var(--radius-control)] bg-surface-dark">
+        <BookOpen className="size-10 text-on-dark-soft/40" aria-hidden />
       </div>
 
       <div className="flex items-start justify-between gap-3">
@@ -30,7 +32,23 @@ export function ModuleCard({ module: m, courseId, role = "student" }: { module: 
         <StatusIndicator kind={status.kind} label={status.label} className="shrink-0" />
       </div>
 
-      <div className="mt-5">
+      {/* Metadata chips */}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {m.aiOptIn ? (
+          <span className="rounded-full border border-accent-text/30 bg-accent-text/10 px-2 py-0.5 text-[11px] font-medium font-body text-accent-text">
+            AI Content
+          </span>
+        ) : null}
+      </div>
+
+      {/* Progress bar (placeholder — no per-student lecture counts at this level) */}
+      <div className="mt-3">
+        <div className="h-1 rounded-full bg-surface-soft overflow-hidden">
+          <div className="h-full rounded-full bg-button-primary" style={{ width: "0%" }} />
+        </div>
+      </div>
+
+      <div className="mt-4">
         <Button asChild variant={role === "teacher" ? "ghost" : "primary"} size={role === "teacher" ? "sm" : "md"} className={role === "teacher" ? "" : "w-full"}>
           <Link href={href}>{isDraft ? "Resume Setup" : role === "teacher" ? "Review" : "Open Module"}</Link>
         </Button>

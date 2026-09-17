@@ -93,13 +93,39 @@ export function CourseLanding({ courseId }: { courseId: string }) {
               <p className="mt-1 text-[15px] text-muted font-body">
                 {[course?.instructorName, course?.term].filter(Boolean).join(" · ")}
               </p>
-              {role === "teacher" && reviewPendingCount ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-[#bb5a3a]/30 bg-[#bb5a3a]/10 px-3 py-1 text-[13px] text-[#bb5a3a] font-body">
-                    {reviewPendingCount} widgets ready to review
+
+              {/* Course-level progress bar */}
+              {modules && modules.length > 0 ? (() => {
+                const published = modules.filter((m) => m.status === "published").length;
+                const total = modules.length;
+                const pct = total > 0 ? Math.round((published / total) * 100) : 0;
+                return (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[13px] font-body text-muted">{published} of {total} modules published</span>
+                      <span className="text-[13px] font-body text-muted">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
+                      <div className="h-full rounded-full bg-button-primary transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })() : null}
+
+              {/* Highlight chips */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href={`/course/${courseId}/forum`}
+                  className="rounded-full border border-hairline bg-surface-card px-3 py-1.5 text-[13px] font-body text-ink hover:border-accent-text/50"
+                >
+                  Open Questions on Recent Slides
+                </Link>
+                {role === "teacher" && reviewPendingCount ? (
+                  <span className="rounded-full border border-[#bb5a3a]/30 bg-[#bb5a3a]/10 px-3 py-1.5 text-[13px] text-[#bb5a3a] font-body">
+                    {reviewPendingCount} Peer Submissions Pending Review
                   </span>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </header>
 
             {modules && modules.length > 0 ? (

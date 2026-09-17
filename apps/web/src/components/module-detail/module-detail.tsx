@@ -2,8 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react";
 import { AppNav } from "@/components/nav/app-nav";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { LectureRow } from "./lecture-row";
@@ -20,6 +23,7 @@ interface ApiCourse {
 
 export function ModuleDetail({ courseId, moduleId }: { courseId: string; moduleId: string }) {
   const identity = useIdentity();
+  const router = useRouter();
   const toast = useToast();
   const [course, setCourse] = React.useState<ApiCourse | null>(null);
   const [module, setModule] = React.useState<ApiModuleDetail | null>(null);
@@ -27,6 +31,7 @@ export function ModuleDetail({ courseId, moduleId }: { courseId: string; moduleI
   const [error, setError] = React.useState<string | null>(null);
   const [overviewExpanded, setOverviewExpanded] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
+  const [lectureView, setLectureView] = React.useState<"list" | "flow">("list");
   const role = identity?.role ?? "student";
 
   const load = React.useCallback(() => {
@@ -175,17 +180,84 @@ export function ModuleDetail({ courseId, moduleId }: { courseId: string; moduleI
           </div>
         ) : null}
 
+        {/* Progress bar */}
+        {lectures && lectures.length > 0 ? (() => {
+          const completed = lectures.filter((l) => l.progress?.completedAt).length;
+          const total = lectures.length;
+          const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+          return (
+            <div className="mt-5">
+              <div className="flex justify-between mb-1">
+                <span className="text-[13px] font-body text-muted">{completed} of {total} Lectures Completed</span>
+                <span className="text-[13px] font-body text-muted">{pct}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-surface-card overflow-hidden">
+                <div className="h-full rounded-full bg-button-primary transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })() : null}
+
         <div className="mt-8 flex items-center justify-between">
           <h2 className="text-[24px]">Lectures</h2>
+          <SegmentedControl
+            label="Lecture view"
+            value={lectureView}
+            onChange={setLectureView}
+            options={[
+              { value: "list", label: "List" },
+              { value: "flow", label: "Flow" },
+            ]}
+          />
         </div>
 
-        <div className="mt-5 space-y-2">
-          {(lectures ?? []).map((l) => (
-            <LectureRow key={l.id} lecture={l} />
-          ))}
-          {(lectures ?? []).length === 0 ? (
-            <p className="text-[14px] text-muted font-body">No lectures yet.</p>
-          ) : null}
+        {lectureView === "list" ? (
+          <div className="mt-5 space-y-2">
+            {(lectures ?? []).map((l) => (
+              <LectureRow key={l.id} lecture={l} role={role} />
+            ))}
+            {(lectures ?? []).length === 0 ? (
+              <p className="text-[14px] text-muted font-body">No lectures yet.</p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-5 flex items-start gap-2 overflow-x-auto py-4">
+            {(lectures ?? []).map((l, i) => (
+              <React.Fragment key={l.id}>
+                {i > 0 && <CaretRight className="mt-3 size-4 shrink-0 text-hairline" aria-hidden />}
+                <button
+                  onClick={() => router.push(`/lecture/${l.id}`)}
+                  className="shrink-0 rounded-[var(--radius-card)] border border-hairline bg-surface-card px-4 py-3 text-left transition-colors hover:border-accent-text/50 min-w-[140px] max-w-[180px]"
+                >
+                  <p className="line-clamp-2 text-[13px] font-medium font-body text-ink">{l.orderIndex}. {l.title}</p>
+                  {l.slideCount ? <p className="mt-1 text-[11px] font-body text-muted">{l.slideCount} slides</p> : null}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+
+        {/* Practice quiz shortcut */}
+        {(lectures ?? []).length > 0 ? (
+          <div className="mt-6 rounded-[var(--radius-card)] border border-hairline bg-surface-card p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[15px] font-medium font-body text-ink">Generate a practice quiz from this module</p>
+              <p className="text-[13px] font-body text-muted mt-0.5">AI-generated questions grounded in this module&rsquo;s lectures.</p>
+            </div>
+            <Button variant="primary" onClick={() => router.push(`/quizzes?module=${moduleId}`)}>
+              Build Quiz
+            </Button>
+          </div>
+        ) : null}
+
+        {/* Community Pulse Strip */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href={`/course/${courseId}/forum`}
+            className="rounded-full border border-hairline bg-surface-card px-3 py-1.5 text-[13px] font-body text-ink hover:border-accent-text/50"
+          >
+            Open Questions in this Module →
+          </Link>
         </div>
 
         {role === "teacher" ? (

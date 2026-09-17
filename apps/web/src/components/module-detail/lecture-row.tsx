@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { ProgressRing } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
 import type { ApiLecture } from "./types";
 
-export function LectureRow({ lecture }: { lecture: ApiLecture }) {
+export function LectureRow({ lecture, role = "student" }: { lecture: ApiLecture; role?: "student" | "teacher" }) {
+  const router = useRouter();
   const toast = useToast();
   const hasContent = lecture.parseStatus === "parsed";
   const done = !!lecture.progress?.completedAt;
@@ -40,20 +42,30 @@ export function LectureRow({ lecture }: { lecture: ApiLecture }) {
           </p>
         </div>
       </div>
-      {hasContent ? (
-        <Button asChild variant={inProgress ? "primary" : "secondary"} size="sm" className="shrink-0">
-          <Link href={href}>{cta}</Link>
-        </Button>
-      ) : (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="shrink-0"
-          onClick={() => toast.push({ message: `This lecture isn't parsed yet (${lecture.parseStatus}).` })}
-        >
-          {cta}
-        </Button>
-      )}
+      <div className="flex shrink-0 items-center gap-2">
+        {role === "teacher" && hasContent ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => router.push(`/lecture/${lecture.id}?mode=present`)}
+          >
+            Present
+          </Button>
+        ) : null}
+        {hasContent ? (
+          <Button asChild variant={inProgress ? "primary" : "secondary"} size="sm">
+            <Link href={href}>{cta}</Link>
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => toast.push({ message: `This lecture isn't parsed yet (${lecture.parseStatus}).` })}
+          >
+            {cta}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
