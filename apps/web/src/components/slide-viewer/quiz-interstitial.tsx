@@ -4,6 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { KeyboardHint } from "@/components/ui/badges";
+import { CircleNotch } from "@phosphor-icons/react";
 import { CheckGlyph, TriangleExclamationGlyph } from "@/components/ui/status-icons";
 import type { QuizQuestion } from "@/lib/data/types";
 
@@ -23,6 +24,7 @@ export function QuizInterstitial({
   onContinue,
   onSkip,
   onViewExplanation,
+  explanationLoading,
 }: {
   question: QuizQuestion;
   previousAnswer: QuizAnswer | null;
@@ -30,6 +32,7 @@ export function QuizInterstitial({
   onContinue: () => void;
   onSkip: () => void;
   onViewExplanation: () => void;
+  explanationLoading?: boolean;
 }) {
   const [selected, setSelected] = React.useState<string | null>(previousAnswer?.optionId ?? null);
   const answered = previousAnswer !== null;
@@ -109,8 +112,12 @@ export function QuizInterstitial({
         </Button>
         <div className="flex items-center gap-3">
           {answered && !previousAnswer?.correct ? (
-            <Button variant="secondary" onClick={onViewExplanation}>
-              View explanation
+            <Button variant="secondary" onClick={onViewExplanation} className="min-w-[8.5rem] justify-center gap-1.5">
+              {explanationLoading ? (
+                <><CircleNotch className="size-3.5 animate-spin" /> Loading&hellip;</>
+              ) : (
+                "View explanation"
+              )}
             </Button>
           ) : null}
           {answered ? (

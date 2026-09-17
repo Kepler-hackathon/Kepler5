@@ -81,6 +81,7 @@ export const slides: Slide[] = SYLLABUS.map((s, i) => {
     layout: "title-bullets",
     bullets: [s.takeaway],
     slideText: `Slide ${number}, ${s.title}. ${s.takeaway}`,
+    hasOriginalMedia: [2, 5, 12, 17].includes(number) ? true : undefined,
   } satisfies Slide;
 });
 
@@ -141,6 +142,7 @@ export const faqThreads: FaqThread[] = [
 export const lecture8: Lecture = {
   id: "lecture-8",
   courseId: course.id,
+  moduleId: "module-3",
   number: 8,
   title: "Recursive Traversal",
   moduleTitle: "Module 3 · Trees & Recursion",

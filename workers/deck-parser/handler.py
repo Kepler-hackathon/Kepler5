@@ -248,7 +248,7 @@ def parse(event: dict) -> dict:
                     """
                     INSERT INTO slides (id, lecture_id, index, text, notes, text_source, created_at)
                     VALUES (%s, %s, %s, %s, %s, 'pptx', NOW())
-                    ON CONFLICT ON CONSTRAINT slides_orig
+                    ON CONFLICT (lecture_id, index) WHERE NOT is_supplementary AND deleted_at IS NULL
                     DO UPDATE SET text = EXCLUDED.text, notes = EXCLUDED.notes
                     """,
                     (slide_id, lecture_id, slide["index"], slide["text"], slide["notes"]),

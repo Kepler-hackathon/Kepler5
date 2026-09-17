@@ -1,31 +1,77 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { AppNav } from "@/components/nav/app-nav";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { ProgressBar } from "@/components/ui/progress";
 import { SkeletonCard } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { ModuleCard } from "./module-card";
 import { FlowView } from "./flow-view";
-import type { Course } from "@/lib/data/types";
-import { modules, courseProgress, totalOpenQuestions } from "@/lib/data/course-landing";
+import { useIdentity } from "@/lib/identity";
+import { apiJson, ApiError } from "@/lib/api-client";
+import type { ApiModule } from "./types";
 
-export function CourseLanding({ course }: { course: Course }) {
-  const [loading, setLoading] = React.useState(true);
+interface ApiCourse {
+  id: string;
+  code: string | null;
+  name: string;
+  term: string | null;
+  instructorName: string | null;
+}
+
+export function CourseLanding({ courseId }: { courseId: string }) {
+  const identity = useIdentity();
+  const [course, setCourse] = React.useState<ApiCourse | null>(null);
+  const [modules, setModules] = React.useState<ApiModule[] | null>(null);
+  const [reviewPendingCount, setReviewPendingCount] = React.useState<number | undefined>(undefined);
+  const [error, setError] = React.useState<string | null>(null);
   const [view, setView] = React.useState<"grid" | "flow">("grid");
 
-  React.useEffect(() => {
-    const t = window.setTimeout(() => setLoading(false), 400);
-    return () => window.clearTimeout(t);
-  }, []);
+  const load = React.useCallback(() => {
+    setError(null);
+    Promise.all([
+      apiJson<{ courses: ApiCourse[] }>("/api/courses").then((d) => d.courses.find((c) => c.id === courseId) ?? null),
+      apiJson<{ modules: ApiModule[]; reviewPendingCount?: number }>(`/api/course?courseId=${courseId}`),
+    ])
+      .then(([foundCourse, moduleData]) => {
+        setCourse(foundCourse);
+        setModules(moduleData.modules);
+        setReviewPendingCount(moduleData.reviewPendingCount);
+      })
+      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load course"));
+  }, [courseId]);
 
-  const progress = courseProgress();
-  const openQuestions = totalOpenQuestions();
-  const widgetsCollectingUpvotes = 5; // student-facing chip (frontend plan S1 edges)
+  React.useEffect(() => {
+    if (!identity) return;
+    load();
+  }, [identity, load]);
+
+  const loading = course === null && modules === null && !error;
+  const role = identity?.role ?? "student";
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-canvas">
+        <AppNav courseId={courseId} activeHref={`/course/${courseId}`} />
+        <main className="mx-auto max-w-5xl px-6 py-10">
+          <div className="flex flex-col items-center gap-4 py-20 text-center">
+            <h2 className="text-[24px]">Couldn&rsquo;t load this course</h2>
+            <p className="text-[15px] text-muted font-body">{error}</p>
+            <Button variant="secondary" onClick={load}>Try again</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-canvas">
-      <AppNav courseId={course.id} activeHref={`/course/${course.id}`} />
+      <AppNav
+        courseId={courseId}
+        course={course ? { code: course.code, title: course.name } : null}
+        activeHref={`/course/${courseId}`}
+      />
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         {loading ? (
@@ -43,38 +89,20 @@ export function CourseLanding({ course }: { course: Course }) {
         ) : (
           <>
             <header>
-              <h1>{course.title}</h1>
+              <h1>{course?.name ?? "Course"}</h1>
               <p className="mt-1 text-[15px] text-muted font-body">
-                {course.instructor} · {course.term}
+                {[course?.instructorName, course?.term].filter(Boolean).join(" · ")}
               </p>
-
-              {course.hasModules ? (
-                <>
-                  <div className="mt-5 max-w-md">
-                    <div className="mb-1.5 flex items-center justify-between text-[13px] font-body">
-                      <span className="text-muted">Course progress</span>
-                      <span className="font-medium text-ink">{progress}%</span>
-                    </div>
-                    <ProgressBar value={progress} label="Course completion" />
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {openQuestions > 0 ? (
-                      <span className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[13px] text-ink font-body">
-                        {openQuestions} open {openQuestions === 1 ? "question" : "questions"} on recent slides
-                      </span>
-                    ) : null}
-                    {widgetsCollectingUpvotes > 0 ? (
-                      <span className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[13px] text-ink font-body">
-                        {widgetsCollectingUpvotes} widgets collecting upvotes
-                      </span>
-                    ) : null}
-                  </div>
-                </>
+              {role === "teacher" && reviewPendingCount ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-[#bb5a3a]/30 bg-[#bb5a3a]/10 px-3 py-1 text-[13px] text-[#bb5a3a] font-body">
+                    {reviewPendingCount} widgets ready to review
+                  </span>
+                </div>
               ) : null}
             </header>
 
-            {course.hasModules ? (
+            {modules && modules.length > 0 ? (
               <>
                 <div className="mt-8 flex items-center justify-between">
                   <h2 className="text-[24px]">Modules</h2>
@@ -93,21 +121,34 @@ export function CourseLanding({ course }: { course: Course }) {
                   {view === "grid" ? (
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {modules.map((m) => (
-                        <ModuleCard key={m.id} module={m} courseId={course.id} />
+                        <ModuleCard key={m.id} module={m} courseId={courseId} role={role} />
                       ))}
+                      {role === "teacher" ? (
+                        <Link href={`/course/${courseId}/module/new`}>
+                          <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border border-dashed border-hairline p-6 text-center transition-colors hover:border-body">
+                            <span className="text-[22px] leading-none text-muted">+</span>
+                            <span className="text-[14px] font-medium font-body text-muted">Add Module</span>
+                          </div>
+                        </Link>
+                      ) : null}
                     </div>
                   ) : (
-                    <FlowView modules={modules} courseId={course.id} />
+                    <FlowView modules={modules} courseId={courseId} />
                   )}
                 </div>
               </>
             ) : (
-              // Frontend plan S1 "no modules" state: "Your instructor hasn't published modules yet."
-              <div className="mt-16 flex flex-col items-center gap-2 text-center">
+              <div className="mt-16 flex flex-col items-center gap-4 text-center">
                 <h2 className="text-[24px]">No modules yet</h2>
-                <p className="max-w-sm text-[15px] text-muted font-body">
-                  Your instructor hasn&rsquo;t published modules yet. Check back soon.
-                </p>
+                {role === "teacher" ? (
+                  <Button asChild>
+                    <Link href={`/course/${courseId}/module/new`}>+ Add Module</Link>
+                  </Button>
+                ) : (
+                  <p className="max-w-sm text-[15px] text-muted font-body">
+                    Your instructor hasn&rsquo;t published modules yet. Check back soon.
+                  </p>
+                )}
               </div>
             )}
           </>

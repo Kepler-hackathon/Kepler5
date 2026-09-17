@@ -6,15 +6,29 @@ import { ChatCircleDots } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { KeplerMark } from "./kepler-mark";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { useToast } from "@/components/ui/toast";
-import { courseById } from "@/lib/data/courses";
+
+interface CourseLabel {
+  code: string | null;
+  title: string;
+}
 
 /** Global nav shell (frontend plan Part I §5.1). */
-export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string; activeHref?: string }) {
-  const toast = useToast();
+export function AppNav({
+  courseId,
+  course,
+  activeHref = "/courses",
+}: {
+  courseId: string;
+  course?: CourseLabel | null;
+  activeHref?: string;
+}) {
   const [role, setRole] = React.useState<"student" | "teacher">("student");
-  const course = courseById(courseId);
   const courseHref = `/course/${courseId}`;
+
+  React.useEffect(() => {
+    const stored = window.localStorage.getItem("keplerlearn:last-role");
+    if (stored === "teacher") setRole("teacher");
+  }, []);
 
   const studentTabs = [
     { label: "Lectures", href: courseHref },
@@ -22,6 +36,15 @@ export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string
     { label: "Practice Quizzes", href: "/quizzes" },
     { label: "My Progress", href: "/progress" },
   ];
+
+  const teacherTabs = [
+    { label: "Modules", href: courseHref },
+    { label: "Review Queue", href: `/course/${courseId}/review` },
+    { label: "Analytics", href: `/course/${courseId}/analytics` },
+    { label: "Forum", href: `${courseHref}/forum` },
+  ];
+
+  const tabs = role === "teacher" ? teacherTabs : studentTabs;
 
   return (
     <nav className="sticky top-0 z-20 flex h-16 items-center justify-between gap-6 border-b border-hairline bg-canvas px-6">
@@ -42,7 +65,7 @@ export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string
       </div>
 
       <div className="hidden items-center gap-1 md:flex">
-        {studentTabs.map((tab) => {
+        {tabs.map((tab) => {
           const active = tab.href === activeHref;
           return (
             <Link
@@ -57,16 +80,18 @@ export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string
             </Link>
           );
         })}
-        <Link
-          href="/assistant"
-          aria-label="AI Course Assistant"
-          className={cn(
-            "ml-1 rounded-full p-2 transition-colors hover:bg-surface-soft hover:text-ink",
-            activeHref === "/assistant" ? "bg-surface-card text-ink" : "text-muted"
-          )}
-        >
-          <ChatCircleDots className="size-5" />
-        </Link>
+        {role === "student" ? (
+          <Link
+            href="/assistant"
+            aria-label="AI Course Assistant"
+            className={cn(
+              "ml-1 rounded-full p-2 transition-colors hover:bg-surface-soft hover:text-ink",
+              activeHref === "/assistant" ? "bg-surface-card text-ink" : "text-muted"
+            )}
+          >
+            <ChatCircleDots className="size-5" />
+          </Link>
+        ) : null}
       </div>
 
       <div className="shrink-0">
@@ -74,11 +99,9 @@ export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string
           label="Role"
           value={role}
           onChange={(next) => {
-            if (next === "teacher") {
-              toast.push({ message: "Teacher screens aren't part of this preview yet." });
-              return;
-            }
             setRole(next);
+            window.localStorage.setItem("keplerlearn:last-role", next);
+            window.dispatchEvent(new CustomEvent("keplerlearn:role-change", { detail: next }));
           }}
           options={[
             { value: "student", label: "Student" },

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SFNClient, StopExecutionCommand } from '@aws-sdk/client-sfn'
 import { db, processingRuns } from '@kepler/db'
 import { eq, and, notInArray } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { enforceTeacher } from '@/lib/middleware/role'
 import { apiError } from '@/lib/errors'
+import { cancelProcessModule } from '@/lib/sfn'
 
 export const dynamic = 'force-dynamic'
-
-const sfn = new SFNClient({ region: process.env.AWS_REGION ?? 'us-east-1' })
 
 export async function POST(
   req: NextRequest,
@@ -40,16 +38,7 @@ export async function POST(
     .set({ cancelRequested: true })
     .where(eq(processingRuns.id, activeRun.id))
 
-  if (activeRun.executionArn) {
-    try {
-      await sfn.send(new StopExecutionCommand({ executionArn: activeRun.executionArn }))
-    } catch (err: unknown) {
-      const name = (err as { name?: string }).name
-      if (name !== 'ExecutionDoesNotExist' && name !== 'ExecutionAlreadyFinished') {
-        console.warn('[processing/cancel] StopExecution failed:', err)
-      }
-    }
-  }
+  await cancelProcessModule(activeRun.executionArn)
 
   return NextResponse.json({ cancelled: true })
 }

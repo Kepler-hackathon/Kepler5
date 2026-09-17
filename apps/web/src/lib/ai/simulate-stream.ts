@@ -98,7 +98,7 @@ export function useGenerationTiming(active: boolean, opts?: { simulatedLatencyMs
         window.clearInterval(interval);
         return;
       }
-      setTier(elapsed >= 8000 ? "slow" : elapsed >= 45000 ? "timeout" : "normal");
+      setTier(elapsed >= 45000 ? "timeout" : elapsed >= 8000 ? "slow" : "normal");
     }, 100);
 
     return () => window.clearInterval(interval);

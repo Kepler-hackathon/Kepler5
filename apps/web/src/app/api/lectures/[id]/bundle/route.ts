@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, lectures, slides, lectureItems } from '@kepler/db'
-import { eq, and, isNull, asc } from 'drizzle-orm'
+import { db, lectures, slides, lectureItems, generatedItems } from '@kepler/db'
+import { eq, and, isNull, asc, inArray } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
 
@@ -57,10 +57,28 @@ export async function GET(
   }))
 
   // Load active lecture items
-  const itemRows = await db
+  const rawItemRows = await db
     .select()
     .from(lectureItems)
     .where(and(eq(lectureItems.lectureId, id), eq(lectureItems.status, 'active')))
+
+  // lecture_items only stores a refId — quiz/widget content lives in generated_items
+  // (publish/route.ts always writes refId as generatedItems.id, regardless of kind).
+  // Resolve it here so the bundle is actually usable by the client without another round trip.
+  const refIds = rawItemRows.map((r) => r.refId)
+  const contentRows = refIds.length
+    ? await db.select().from(generatedItems).where(inArray(generatedItems.id, refIds))
+    : []
+  const contentById = new Map(contentRows.map((c) => [c.id, c]))
+
+  const itemRows = rawItemRows.map((item) => {
+    const generated = contentById.get(item.refId)
+    return {
+      ...item,
+      content: generated?.content ?? null,
+      conceptLabel: generated?.conceptLabel ?? null,
+    }
+  })
 
   // Sort: group by afterSlideId, then by kind order, then orderInSlot
   itemRows.sort((a, b) => {

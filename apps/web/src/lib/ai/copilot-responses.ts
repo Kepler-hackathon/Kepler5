@@ -57,7 +57,16 @@ const FALLBACK_ANSWER: CopilotAnswer = {
     "I don't see that covered in this lecture's slides or textbook chapter. In general terms: recursive functions typically need a base case that stops the recursion, and a recursive case that makes progress toward it — happy to go deeper if you point me at a specific part of the course.",
 };
 
-export function answerFor(question: string): CopilotAnswer {
+const LECTURE_FALLBACK: CopilotAnswer = {
+  grounded: false,
+  text: "That doesn't appear to be covered directly in Lecture 8's slides. For a broader view of how this concept fits into the module, try the FAQ forum where classmates may have asked similar questions.",
+};
+
+export function answerFor(question: string, scope: "slide" | "lecture" = "slide"): CopilotAnswer {
   const match = KEYWORD_ANSWERS.find((k) => k.test.test(question));
-  return match ? match.answer : FALLBACK_ANSWER;
+  if (!match) return scope === "lecture" ? LECTURE_FALLBACK : FALLBACK_ANSWER;
+  if (scope === "lecture" && match.answer.citation === "Grounded in Slide 14") {
+    return { ...match.answer, citation: "Grounded in Lecture 8" };
+  }
+  return match.answer;
 }

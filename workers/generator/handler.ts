@@ -65,7 +65,7 @@ type SfnTask =
   | { task: 'wizardGenerate'; runId: string; moduleId: string; lectureId: string }
   | { task: 'finishRun'; input: Record<string, unknown> };
 
-type JobMessage = { jobId: string; type: string };
+export type JobMessage = { jobId: string };
 
 const JOB_TYPES = new Set([
   'remediation_widget',
@@ -77,7 +77,7 @@ const JOB_TYPES = new Set([
 
 // ─── startRun ────────────────────────────────────────────────────────────────
 
-async function startRun(input: {
+export async function startRun(input: {
   runId: string;
   moduleId: string;
   onlyLectureIds?: string[] | null;
@@ -130,7 +130,7 @@ async function startRun(input: {
 
 // ─── finishRun ───────────────────────────────────────────────────────────────
 
-async function finishRun(input: Record<string, unknown>): Promise<{ ok: boolean }> {
+export async function finishRun(input: Record<string, unknown>): Promise<{ ok: boolean }> {
   const sql = await getSql();
   const runId = input.runId as string | undefined;
   if (!runId) {
@@ -179,7 +179,7 @@ const QuestionSchema = z.object({
   ),
 });
 
-async function wizardGenerate(event: {
+export async function wizardGenerate(event: {
   runId: string;
   moduleId: string;
   lectureId: string;
@@ -378,18 +378,18 @@ async function handleChatTitle(sql: postgres.Sql, jobId: string, input: unknown)
     return;
   }
 
-  const { threadId, firstMessage } = input as { threadId: string; firstMessage: string };
+  const { threadId, firstUserMessage } = input as { threadId: string; firstUserMessage: string };
 
   let title: string;
   try {
     const { text } = await generateText({
       model: fastModel(),
-      prompt: `Generate a short title (≤60 characters, no quotes) for a tutoring chat thread that starts with this message:\n\n"${firstMessage.slice(0, 500)}"`,
+      prompt: `Generate a short title (≤60 characters, no quotes) for a tutoring chat thread that starts with this message:\n\n"${firstUserMessage.slice(0, 500)}"`,
       maxTokens: 30,
     });
     title = text.trim().replace(/^["']|["']$/g, '').slice(0, 60);
   } catch {
-    title = firstMessage.slice(0, 60);
+    title = firstUserMessage.slice(0, 60);
   }
 
   await sql`UPDATE chat_threads SET title = ${title} WHERE id = ${threadId}`;
@@ -503,32 +503,43 @@ Create 1-2 guided stages that help the student build up to understanding the cor
   `;
 }
 
-async function handleJob(message: JobMessage): Promise<void> {
-  if (!JOB_TYPES.has(message.type)) throw new Error(`unknown job type: ${message.type}`);
-  console.log(JSON.stringify({ msg: 'job received', jobId: message.jobId, type: message.type }));
-
+export async function handleJob(message: JobMessage): Promise<void> {
   const sql = await getSql();
   const job = await loadJob(sql, message.jobId);
   if (!job) return;
 
-  switch (message.type) {
-    case 'practice_quiz':
-      await handlePracticeQuiz(sql, message.jobId, job.input);
-      break;
-    case 'chat_title':
-      await handleChatTitle(sql, message.jobId, job.input);
-      break;
-    case 'remediation_text':
-    case 'remediation_widget':
-      await handleRemediation(sql, message.jobId, message.type, job.input);
-      break;
-    case 'supplementary':
-      await sql`
-        UPDATE generation_jobs
-        SET status = 'failed', error = 'not_implemented', finished_at = now()
-        WHERE id = ${message.jobId}
-      `;
-      break;
+  if (!JOB_TYPES.has(job.type)) throw new Error(`unknown job type: ${job.type}`);
+  console.log(JSON.stringify({ msg: 'job received', jobId: message.jobId, type: job.type }));
+
+  try {
+    switch (job.type) {
+      case 'practice_quiz':
+        await handlePracticeQuiz(sql, message.jobId, job.input);
+        break;
+      case 'chat_title':
+        await handleChatTitle(sql, message.jobId, job.input);
+        break;
+      case 'remediation_text':
+      case 'remediation_widget':
+        await handleRemediation(sql, message.jobId, job.type, job.input);
+        break;
+      case 'supplementary':
+        await sql`
+          UPDATE generation_jobs
+          SET status = 'failed', error = 'not_implemented', finished_at = now()
+          WHERE id = ${message.jobId}
+        `;
+        break;
+    }
+  } catch (err) {
+    // Handlers above record their own expected failure modes; this catches anything
+    // unexpected so the job never gets stuck at 'running' with no error recorded.
+    await sql`
+      UPDATE generation_jobs
+      SET status = 'failed', error = ${String(err instanceof Error ? err.message : err)}, finished_at = now()
+      WHERE id = ${message.jobId} AND status = 'running'
+    `;
+    throw err;
   }
 }
 
