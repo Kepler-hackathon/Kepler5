@@ -22,6 +22,9 @@ importers:
       '@aws-sdk/client-sqs':
         specifier: ^3.717.0
         version: 3.1134.0
+      '@aws-sdk/credential-provider-node':
+        specifier: ^3.700.0
+        version: 3.972.83
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.717.0
         version: 3.1134.0
