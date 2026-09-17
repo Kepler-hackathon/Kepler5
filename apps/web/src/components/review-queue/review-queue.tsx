@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle, Warning, Archive, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CheckCircle, Warning, Archive, CaretUp, Check } from "@phosphor-icons/react";
 import { AppNav } from "@/components/nav/app-nav";
 import { Tabs, TabList, TabTrigger, TabPanel } from "@/components/ui/tabs";
-import { WidgetSlot } from "@/components/widgets/widget-slot";
+import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
@@ -43,130 +43,7 @@ function widgetExplanation(content: Record<string, unknown>): string {
 function widgetTypeBadge(content: Record<string, unknown>): string {
   if (typeof content.kind === "string") return content.kind;
   if (typeof content.family === "string") return content.family;
-  return "widget";
-}
-
-function WidgetReviewCard({
-  widget,
-  onApprove,
-  onRequestChanges,
-  onArchive,
-}: {
-  widget: PeerWidgetRow;
-  onApprove: (afterSlideId: string) => Promise<void>;
-  onRequestChanges: (note: string) => Promise<void>;
-  onArchive: () => Promise<void>;
-}) {
-  const [expanded, setExpanded] = React.useState(false);
-  const [draftNote, setDraftNote] = React.useState("");
-  const [showNoteForm, setShowNoteForm] = React.useState(false);
-  const [slides, setSlides] = React.useState<PlacementSlide[]>([]);
-  const [selectedSlideId, setSelectedSlideId] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-  const identity = useIdentity();
-
-  React.useEffect(() => {
-    if (!expanded || identity?.role !== "teacher") return;
-    apiJson<{ lectureId: string | null; slides: PlacementSlide[] }>(`/api/review/${widget.id}/placement`)
-      .then((data) => {
-        setSlides(data.slides);
-        if (data.slides[0]) setSelectedSlideId(data.slides[0].id);
-      })
-      .catch(() => {});
-  }, [expanded, widget.id, identity]);
-
-  return (
-    <div className="rounded-[var(--radius-card)] border border-hairline bg-surface-card p-5">
-      <button onClick={() => setExpanded((v) => !v)} className="flex w-full items-start justify-between gap-3 text-left">
-        <div className="min-w-0">
-          <p className="text-[15px] font-medium font-body text-ink">{widget.title}</p>
-          <p className="mt-0.5 text-[12px] text-muted font-body">
-            {displayNameFor(widget.authorId, identity?.userId)} · {widget.upvoteCount} upvote{widget.upvoteCount !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <CaretDown className={cn("size-4 shrink-0 text-muted transition-transform", expanded && "rotate-180")} />
-      </button>
-
-      {expanded ? (
-        <div className="mt-4 space-y-4">
-          <WidgetSlot typeBadge={widgetTypeBadge(widget.content)} title={widget.title} explanation={widgetExplanation(widget.content)} size="compact" />
-
-          {showNoteForm ? (
-            <div className="space-y-2">
-              <Textarea rows={3} value={draftNote} onChange={(e) => setDraftNote(e.target.value)} placeholder="Explain what needs to change…" />
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={!draftNote.trim() || busy}
-                  onClick={async () => {
-                    setBusy(true);
-                    await onRequestChanges(draftNote.trim());
-                    setBusy(false);
-                    setShowNoteForm(false);
-                    setDraftNote("");
-                  }}
-                >
-                  Send feedback
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowNoteForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {slides.length > 0 ? (
-                <label className="block text-[12px] font-medium font-body text-muted">
-                  Insert after slide
-                  <select
-                    value={selectedSlideId}
-                    onChange={(e) => setSelectedSlideId(e.target.value)}
-                    className="mt-1 block w-full rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2 text-[14px] text-ink font-body"
-                  >
-                    {slides.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        Slide (index {s.index})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={busy || !selectedSlideId}
-                  onClick={async () => {
-                    setBusy(true);
-                    await onApprove(selectedSlideId);
-                    setBusy(false);
-                  }}
-                >
-                  <CheckCircle className="size-4" /> Approve
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setShowNoteForm(true)}>
-                  <Warning className="size-4" /> Request changes
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={busy}
-                  onClick={async () => {
-                    setBusy(true);
-                    await onArchive();
-                    setBusy(false);
-                  }}
-                >
-                  <Archive className="size-4" /> Archive
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
+  return "Widget";
 }
 
 function QuestionReviewRow({
@@ -216,6 +93,199 @@ function QuestionReviewRow({
         <div className="flex items-center gap-1 text-[12px] text-muted font-body">
           <CaretUp className="size-3.5" /> {thread.upvoteCount}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function WidgetWorkbench({
+  widgets,
+  onApprove,
+  onRequestChanges,
+  onArchive,
+}: {
+  widgets: PeerWidgetRow[];
+  onApprove: (id: string, afterSlideId: string) => Promise<void>;
+  onRequestChanges: (id: string, note: string) => Promise<void>;
+  onArchive: (id: string) => Promise<void>;
+}) {
+  const identity = useIdentity();
+  const [selectedId, setSelectedId] = React.useState<string | null>(widgets[0]?.id ?? null);
+  const [slides, setSlides] = React.useState<PlacementSlide[]>([]);
+  const [selectedSlideId, setSelectedSlideId] = React.useState("");
+  const [showNoteForm, setShowNoteForm] = React.useState(false);
+  const [draftNote, setDraftNote] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  const selected = widgets.find((w) => w.id === selectedId) ?? null;
+
+  // Keep selectedId pointing at a valid widget
+  React.useEffect(() => {
+    if (!selectedId && widgets.length > 0) setSelectedId(widgets[0]!.id);
+    if (selectedId && !widgets.find((w) => w.id === selectedId) && widgets.length > 0) {
+      setSelectedId(widgets[0]!.id);
+    }
+  }, [widgets, selectedId]);
+
+  // Load placement slides when selection changes
+  React.useEffect(() => {
+    if (!selectedId || identity?.role !== "teacher") return;
+    setSlides([]);
+    setSelectedSlideId("");
+    apiJson<{ lectureId: string | null; slides: PlacementSlide[] }>(`/api/review/${selectedId}/placement`)
+      .then((data) => {
+        setSlides(data.slides);
+        if (data.slides[0]) setSelectedSlideId(data.slides[0].id);
+      })
+      .catch(() => {});
+  }, [selectedId, identity]);
+
+  if (widgets.length === 0) {
+    return <p className="py-16 text-center text-[15px] text-muted font-body">No widget submissions waiting for review.</p>;
+  }
+
+  return (
+    <div className="flex min-h-[600px]">
+      {/* Left column — 35% */}
+      <div className="w-[35%] shrink-0 overflow-y-auto border-r border-hairline">
+        <div className="p-3 space-y-1">
+          {widgets.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => { setSelectedId(w.id); setShowNoteForm(false); setDraftNote(""); }}
+              className={cn(
+                "w-full rounded-[var(--radius-control)] p-3 text-left transition-colors",
+                selectedId === w.id ? "bg-surface-card" : "hover:bg-surface-soft"
+              )}
+            >
+              <p className="text-[14px] font-medium font-body text-ink line-clamp-1">{w.title}</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-hairline px-2 py-0.5 text-[11px] font-body text-muted">
+                  {widgetTypeBadge(w.content)}
+                </span>
+                <span className="flex items-center gap-1 text-[12px] font-body text-muted">
+                  <CaretUp className="size-3" /> {w.upvoteCount}
+                </span>
+              </div>
+              <p className="mt-1 text-[12px] font-body text-muted">
+                {displayNameFor(w.authorId, identity?.userId)}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right stage — 65% */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        {selected ? (
+          <>
+            {/* Positioning banner */}
+            <div className="border-b border-hairline bg-surface-soft px-6 py-3">
+              <p className="text-[13px] font-body text-muted">
+                Positioning preview — this widget will appear
+                {slides.length > 0 && selectedSlideId
+                  ? ` after Slide ${(slides.find((s) => s.id === selectedSlideId)?.index ?? 0) + 1}`
+                  : " in the lecture"}
+              </p>
+              {slides.length > 0 ? (
+                <select
+                  value={selectedSlideId}
+                  onChange={(e) => setSelectedSlideId(e.target.value)}
+                  className="mt-1.5 rounded-[var(--radius-control)] border border-hairline bg-canvas px-2 py-1 text-[12px] text-ink font-body"
+                >
+                  {slides.map((s) => (
+                    <option key={s.id} value={s.id}>After Slide {s.index + 1}</option>
+                  ))}
+                </select>
+              ) : null}
+            </div>
+
+            {/* Widget sandbox */}
+            <div className="px-6 pt-6">
+              <div className="rounded-[var(--radius-card)] bg-surface-dark p-6">
+                <TraceStepperWidget />
+              </div>
+            </div>
+
+            {/* Student notes */}
+            <div className="mx-6 mt-4 rounded-[var(--radius-card)] border border-hairline bg-surface-card p-4">
+              <p className="text-[12px] font-medium font-body text-muted uppercase tracking-[0.5px] mb-2">Student notes</p>
+              <p className="text-[13px] leading-relaxed font-body text-body">{widgetExplanation(selected.content)}</p>
+            </div>
+
+            {/* Request edits note form */}
+            {showNoteForm ? (
+              <div className="mx-6 mt-4 space-y-2">
+                <Textarea
+                  rows={3}
+                  value={draftNote}
+                  onChange={(e) => setDraftNote(e.target.value)}
+                  placeholder="Explain what needs to change…"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!draftNote.trim() || busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      await onRequestChanges(selected.id, draftNote.trim());
+                      setBusy(false);
+                      setShowNoteForm(false);
+                      setDraftNote("");
+                    }}
+                  >
+                    Send feedback
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowNoteForm(false); setDraftNote(""); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex-1" />
+
+            {/* Sticky action bar */}
+            <div className="sticky bottom-0 mt-4 flex items-center gap-3 border-t border-hairline bg-canvas px-6 py-4">
+              <Button
+                variant="primary"
+                disabled={busy || (!selectedSlideId && slides.length > 0)}
+                className="gap-1.5"
+                onClick={async () => {
+                  setBusy(true);
+                  await onApprove(selected.id, selectedSlideId);
+                  setBusy(false);
+                }}
+              >
+                <Check weight="bold" className="size-4" /> Approve &amp; Merge
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setShowNoteForm(true)}
+              >
+                <Warning className="size-4" /> Request Edits
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={busy}
+                className="ml-auto text-error hover:text-error"
+                onClick={async () => {
+                  setBusy(true);
+                  await onArchive(selected.id);
+                  setBusy(false);
+                }}
+              >
+                <Archive className="size-4" /> Decline / Archive
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center py-20">
+            <p className="text-[15px] text-muted font-body">Select a submission from the left to review it.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -308,68 +378,59 @@ export function ReviewQueue({ courseId }: { courseId: string }) {
   return (
     <div className="min-h-screen bg-canvas">
       <AppNav courseId={courseId} activeHref={`/course/${courseId}/review`} />
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-6 pt-10 pb-4">
         <p className="text-[13px] font-medium font-body uppercase tracking-[1px] text-accent-text">Review queue</p>
         <h1 className="mt-1">Student submissions</h1>
         <p className="mt-2 text-[15px] text-muted font-body">Approve or give feedback on widget submissions, and endorse quality questions.</p>
+      </div>
 
-        {loading ? (
-          <p className="mt-8 text-center text-[15px] text-muted font-body">Loading…</p>
-        ) : (
-          <div className="mt-8">
-            <Tabs defaultValue="widgets">
-              <TabList>
-                <TabTrigger value="widgets">
-                  Widgets
-                  {pendingCount > 0 ? (
-                    <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-[#bb5a3a] text-[10px] font-medium text-white">
-                      {pendingCount}
-                    </span>
-                  ) : null}
-                </TabTrigger>
-                <TabTrigger value="questions">
-                  Questions
-                  {threads.length > 0 ? (
-                    <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-surface-card text-[10px] font-medium text-muted border border-hairline">
-                      {threads.length}
-                    </span>
-                  ) : null}
-                </TabTrigger>
-              </TabList>
+      {loading ? (
+        <p className="mt-8 text-center text-[15px] text-muted font-body">Loading…</p>
+      ) : (
+        <div className="mx-auto max-w-3xl px-6 pb-4">
+          <Tabs defaultValue="widgets">
+            <TabList>
+              <TabTrigger value="widgets">
+                Widgets
+                {pendingCount > 0 ? (
+                  <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-[#bb5a3a] text-[10px] font-medium text-white">
+                    {pendingCount}
+                  </span>
+                ) : null}
+              </TabTrigger>
+              <TabTrigger value="questions">
+                Questions
+                {threads.length > 0 ? (
+                  <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-surface-card text-[10px] font-medium text-muted border border-hairline">
+                    {threads.length}
+                  </span>
+                ) : null}
+              </TabTrigger>
+            </TabList>
 
-              <TabPanel value="widgets" className="mt-6">
-                {widgets.length === 0 ? (
-                  <p className="py-12 text-center text-[15px] text-muted font-body">No widget submissions waiting for review.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {widgets.map((w) => (
-                      <WidgetReviewCard
-                        key={w.id}
-                        widget={w}
-                        onApprove={(afterSlideId) => approveWidget(w.id, afterSlideId)}
-                        onRequestChanges={(note) => requestChanges(w.id, note)}
-                        onArchive={() => archiveWidget(w.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabPanel>
+            <TabPanel value="widgets" className="mt-6">
+              <WidgetWorkbench
+                widgets={widgets}
+                onApprove={approveWidget}
+                onRequestChanges={requestChanges}
+                onArchive={archiveWidget}
+              />
+            </TabPanel>
 
-              <TabPanel value="questions" className="mt-6">
-                {threads.length === 0 ? (
-                  <p className="py-12 text-center text-[15px] text-muted font-body">All questions have been endorsed — great work!</p>
-                ) : (
-                  <div className="space-y-2">
-                    {threads.map((t) => (
-                      <QuestionReviewRow key={t.id} thread={t} moduleName={moduleName(t.tagModuleId)} onEndorse={() => endorseThread(t.id)} />
-                    ))}
-                  </div>
-                )}
-              </TabPanel>
-            </Tabs>
-          </div>
-        )}
-      </main>
+            <TabPanel value="questions" className="mt-6">
+              {threads.length === 0 ? (
+                <p className="py-12 text-center text-[15px] text-muted font-body">All questions have been endorsed — great work!</p>
+              ) : (
+                <div className="space-y-2">
+                  {threads.map((t) => (
+                    <QuestionReviewRow key={t.id} thread={t} moduleName={moduleName(t.tagModuleId)} onEndorse={() => endorseThread(t.id)} />
+                  ))}
+                </div>
+              )}
+            </TabPanel>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
 }
