@@ -1,0 +1,63 @@
+# backend-plan.md §13: build → cdk deploy → migrate → smoke test, authenticated with GitHub OIDC.
+# Requires the repo variable AWS_DEPLOY_ROLE_ARN (output GithubDeployRoleArn after deploying with
+# -c githubRepo=<owner/repo>). Until that exists this workflow only runs the checks job.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: infra typecheck + synth
+        working-directory: infra
+        run: |
+          npm ci
+          npm run typecheck
+          npx cdk synth --quiet
+      - name: web typecheck
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run typecheck
+      - name: generator typecheck
+        working-directory: workers/generator
+        run: |
+          npm ci
+          npm run typecheck
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    environment: demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: cdk deploy
+        working-directory: infra
+        run: |
+          npm ci
+          npx cdk deploy --require-approval never --outputs-file outputs.json
+      - name: migrate
+        run: bash infra/scripts/migrate.sh
+      - name: smoke test
+        run: |
+          URL=$(jq -r '.KeplerStack.CdnUrl' infra/outputs.json)
+          curl --fail --retry 10 --retry-delay 15 --retry-all-errors "$URL/api/health"
