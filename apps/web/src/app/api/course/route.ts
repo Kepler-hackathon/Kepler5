@@ -10,10 +10,11 @@ export async function GET(req: NextRequest) {
   const identity = getIdentity(req)
   if (!identity) return apiError('identity_required', 'Identity headers required', 400)
 
-  // Use the first (demo) course — multi-course support omitted for MVP
-  const where = identity.role === 'teacher'
-    ? undefined
-    : eq(modules.status, 'published')
+  const courseId = req.nextUrl.searchParams.get('courseId')
+  const statusFilter = identity.role === 'teacher' ? undefined : eq(modules.status, 'published')
+  const where = courseId
+    ? (statusFilter ? and(eq(modules.courseId, courseId), statusFilter) : eq(modules.courseId, courseId))
+    : statusFilter // no courseId given: preserves prior single-course behavior (all modules)
 
   const rows = await db.select().from(modules).where(where).orderBy(modules.orderIndex)
 

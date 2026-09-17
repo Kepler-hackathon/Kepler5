@@ -2,20 +2,19 @@ import Link from "next/link";
 import { CaretRight } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { StatusGlyph } from "@/components/ui/status-indicator";
-import type { Module } from "@/lib/data/course-landing";
+import type { ApiModule } from "./types";
 
-function statusFor(m: Module): { kind: "done" | "in-progress" | "not-started"; label: string } {
-  if (m.completedLectures === m.totalLectures) return { kind: "done", label: "Completed" };
-  if (m.completedLectures === 0 && !m.inProgressLectureNumber) return { kind: "not-started", label: "Not started" };
-  return { kind: "in-progress", label: "In progress" };
+function statusFor(m: ApiModule): { kind: "done" | "in-progress" | "not-started"; label: string } {
+  if (m.status === "published") return { kind: "done", label: "Published" };
+  if (m.status === "draft") return { kind: "not-started", label: "Draft" };
+  return { kind: "in-progress", label: m.status.replace("_", " ") };
 }
 
 /**
  * Sequential flowchart — the order modules were sequenced in, one box per module,
  * connected by plain arrows (frontend plan / screens_breakdown Screen 1 Flow View).
- * Same lightweight component Screen 3 reuses for its lecture flow.
  */
-export function FlowView({ modules, courseId }: { modules: Module[]; courseId: string }) {
+export function FlowView({ modules, courseId }: { modules: ApiModule[]; courseId: string }) {
   return (
     <div className="flex flex-col items-stretch gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:gap-3">
       {modules.map((m, i) => {
@@ -30,9 +29,7 @@ export function FlowView({ modules, courseId }: { modules: Module[]; courseId: s
                 )}
               >
                 <StatusGlyph kind={status.kind} label={status.label} />
-                <span className="line-clamp-2 text-[14px] font-medium font-body text-ink">
-                  {m.number}. {m.title}
-                </span>
+                <span className="line-clamp-2 text-[14px] font-medium font-body text-ink">{m.name}</span>
               </div>
             </Link>
             {i < modules.length - 1 ? (

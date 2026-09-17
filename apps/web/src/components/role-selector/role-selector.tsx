@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { GraduationCap, ChalkboardTeacher, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { KeplerMark } from "@/components/nav/kepler-mark";
+import { getOrCreateUserId, setStoredRole, type Role } from "@/lib/identity";
 
-type Role = "student" | "teacher";
 const LAST_ROLE_KEY = "keplerlearn:last-role";
 
 /**
@@ -31,7 +31,9 @@ export function RoleSelector() {
   function choose(role: Role) {
     if (entering) return;
     setEntering(role);
-    window.localStorage.setItem(LAST_ROLE_KEY, role);
+    getOrCreateUserId();
+    setStoredRole(role);
+    window.dispatchEvent(new CustomEvent("keplerlearn:role-change", { detail: role }));
     const slowTimer = window.setTimeout(() => setSlowLoad(true), 3000);
     window.setTimeout(() => {
       window.clearTimeout(slowTimer);

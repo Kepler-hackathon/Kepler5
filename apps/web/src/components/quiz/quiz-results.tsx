@@ -6,7 +6,6 @@ import { CaretDown, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { CheckGlyph, TriangleExclamationGlyph, DashGlyph } from "@/components/ui/status-icons";
-import { moduleDetails } from "@/lib/data/curriculum";
 import type { ArenaResult } from "./quiz-arena";
 
 function ResultRow({
@@ -26,7 +25,7 @@ function ResultRow({
     return (
       <div className="flex items-center gap-3 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-3">
         <CheckGlyph className="text-success" />
-        <span className="text-[14px] font-body text-ink">{result.question.prompt}</span>
+        <span className="text-[14px] font-body text-ink">{result.question.promptMd}</span>
       </div>
     );
   }
@@ -50,42 +49,18 @@ function ResultRow({
         ) : (
           <DashGlyph className="text-muted" />
         )}
-        <span className="flex-1 text-[14px] font-body text-ink">{result.question.prompt}</span>
+        <span className="flex-1 text-[14px] font-body text-ink">{result.question.promptMd}</span>
         <span className="text-[12px] text-muted font-body">{result.status === "incorrect" ? "Missed" : "Skipped"}</span>
         <CaretDown className={cn("size-4 text-muted transition-transform", expanded && "rotate-180")} />
       </button>
       {expanded ? (
         <div className="mt-3 border-t border-hairline pt-3">
-          <div className="mb-3 flex gap-1 border-b border-hairline pb-2">
-            <button
-              onClick={() => setActiveTab("explanation")}
-              className={cn(
-                "px-3 py-1 text-[12px] font-medium font-body rounded-full transition-colors",
-                activeTab === "explanation" ? "bg-surface-dark text-on-dark" : "text-muted hover:text-ink"
-              )}
-            >
-              Explanation
-            </button>
-            <button
-              onClick={() => setActiveTab("interactive")}
-              className={cn(
-                "px-3 py-1 text-[12px] font-medium font-body rounded-full transition-colors",
-                activeTab === "interactive" ? "bg-surface-dark text-on-dark" : "text-muted hover:text-ink"
-              )}
-            >
-              Interactive
-            </button>
-          </div>
-          {activeTab === "explanation" ? (
-            loading ? (
-              <CircleNotch className="size-4 animate-spin text-muted" />
-            ) : (
-              <p className="text-[13px] leading-relaxed text-body font-body">{result.question.correctExplanation}</p>
-            )
+          {loading ? (
+            <CircleNotch className="size-4 animate-spin text-muted" />
           ) : (
-            <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-3 py-4 text-center">
-              <span className="mx-auto text-[13px] text-muted font-body">Interactive widget available in the lecture&rsquo;s slide viewer.</span>
-            </div>
+            <p className="text-[13px] leading-relaxed text-body font-body">
+              {result.explanationMd ?? "No explanation available."}
+            </p>
           )}
         </div>
       ) : null}
@@ -95,10 +70,13 @@ function ResultRow({
 
 export function QuizResults({
   results,
+  score,
   onRetakeSame,
   onBackToBuilder,
 }: {
   results: ArenaResult[];
+  /** Authoritative score from POST /api/practice/sessions/[id]/complete; falls back to a local count. */
+  score?: { correct: number; total: number; percentage: number };
   onRetakeSame: () => void;
   onBackToBuilder?: () => void;
 }) {
@@ -107,13 +85,9 @@ export function QuizResults({
     setLoadedIds((prev) => new Set([...prev, id]));
   }
 
-  const correct = results.filter((r) => r.status === "correct").length;
-  const total = results.length;
-  const percent = Math.round((correct / total) * 100);
-
-  const involvedModules = moduleDetails.filter((m) =>
-    m.lectures.some((l) => results.some((r) => r.question.lectureNumber === l.number))
-  );
+  const correct = score?.correct ?? results.filter((r) => r.status === "correct").length;
+  const total = score?.total ?? results.length;
+  const percent = score?.percentage ?? Math.round((correct / total) * 100);
 
   return (
     <div className="mx-auto max-w-2xl text-center">
@@ -128,20 +102,6 @@ export function QuizResults({
             ? "Everyone starts somewhere — try reviewing the explanations below."
             : `${percent}% correct.`}
       </p>
-
-      {involvedModules.length > 1 ? (
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {involvedModules.map((m) => {
-            const moduleResults = results.filter((r) => m.lectures.some((l) => l.number === r.question.lectureNumber));
-            const moduleCorrect = moduleResults.filter((r) => r.status === "correct").length;
-            return (
-              <span key={m.id} className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[12px] text-muted font-body">
-                Module {m.number}: {moduleCorrect}/{moduleResults.length}
-              </span>
-            );
-          })}
-        </div>
-      ) : null}
 
       <div className="mt-8 space-y-2 text-left">
         {results.map((r, i) => (

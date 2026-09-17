@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "description": "Lambda worker: on-demand generation jobs (SQS) and process-module Step Functions tasks — docs/backend-plan.md §8, §9",
+  "exports": {
+    "./handler": "./handler.ts"
+  },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.8",

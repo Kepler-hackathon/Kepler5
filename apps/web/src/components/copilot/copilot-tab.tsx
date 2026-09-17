@@ -2,61 +2,101 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useChat, type Message } from "ai/react";
 import { ArrowDown, PaperPlaneRight, Stop, Sparkle } from "@phosphor-icons/react";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { IconButton } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
-import { ChatMessageView, type ChatMessageData } from "./chat-message";
-import { answerFor } from "@/lib/ai/copilot-responses";
-import { useStreamingText } from "@/lib/ai/simulate-stream";
-import { MINI_QUIZ } from "@/lib/data/mini-quiz";
+import { ChatMessageView } from "./chat-message";
+import { useIdentity } from "@/lib/identity";
+import { apiJson } from "@/lib/api-client";
 
-const STARTER_CHIPS = ["Generate Mini-Quiz", "Step through Code Trace", "Explain more simply", "Show me visually"];
+const STARTER_QUESTIONS = ["Explain this more simply", "What should I remember from this?", "Give me an example"];
 const CHAR_LIMIT = 4000;
 
-let idCounter = 0;
-function nextId() {
-  idCounter += 1;
-  return `msg-${idCounter}`;
+/**
+ * Real per-slide/lecture AI copilot. `lectureId`/`slideId` are the real Postgres UUIDs for
+ * the current lecture/slide (passed down from the slide viewer, which owns real content
+ * browsing — see plan stage 4); `slideNumber`/`lectureNumber` are display-only.
+ */
+export function CopilotTab({
+  slideNumber,
+  lectureNumber,
+  lectureId,
+  slideId,
+}: {
+  slideNumber: number;
+  lectureNumber: number;
+  lectureId?: string;
+  slideId?: string;
+}) {
+  const identity = useIdentity();
+  const [scope, setScope] = React.useState<"slide" | "lecture">("slide");
+  const [threadId, setThreadId] = React.useState<string | null>(null);
+
+  const scopeId = scope === "slide" ? (slideId ?? null) : (lectureId ?? null);
+
+  // A fresh thread per (scope, scopeId) — matches the mock's "Now on Slide N" reset
+  // behavior, but as a real distinct chat_threads row instead of an in-memory divider.
+  React.useEffect(() => {
+    if (!identity) return;
+    let cancelled = false;
+    apiJson<{ id: string }>("/api/chat/threads", {
+      method: "POST",
+      body: JSON.stringify({ scope, scopeId }),
+    }).then((thread) => {
+      if (!cancelled) setThreadId(thread.id);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identity, scope, scopeId]);
+
+  if (!identity || !threadId) {
+    return <div className="flex h-full items-center justify-center text-[13px] text-muted font-body">Loading…</div>;
+  }
+
+  return (
+    <CopilotThread
+      key={threadId}
+      threadId={threadId}
+      headers={{ "x-kepler-user": identity.userId, "x-kepler-role": identity.role }}
+      scope={scope}
+      setScope={setScope}
+      slideNumber={slideNumber}
+      lectureNumber={lectureNumber}
+    />
+  );
 }
 
-export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number; lectureNumber: number }) {
-  const [scope, setScope] = React.useState<"slide" | "lecture">("slide");
-  const [messages, setMessages] = React.useState<ChatMessageData[]>([]);
-  const [streamingMessage, setStreamingMessage] = React.useState<ChatMessageData | null>(null);
-  const [draft, setDraft] = React.useState("");
+function CopilotThread({
+  threadId,
+  headers,
+  scope,
+  setScope,
+  slideNumber,
+  lectureNumber,
+}: {
+  threadId: string;
+  headers: Record<string, string>;
+  scope: "slide" | "lecture";
+  setScope: (s: "slide" | "lecture") => void;
+  slideNumber: number;
+  lectureNumber: number;
+}) {
+  const { messages, input, setInput, handleSubmit, isLoading, stop, append } = useChat({
+    id: threadId,
+    api: `/api/chat/threads/${threadId}/messages`,
+    headers,
+  });
+
   const [atBottom, setAtBottom] = React.useState(true);
   const listRef = React.useRef<HTMLDivElement>(null);
-  const lastSlideRef = React.useRef(slideNumber);
-
-  const streaming = useStreamingText(streamingMessage?.text ?? "", { active: streamingMessage !== null });
-
-  React.useEffect(() => {
-    if (lastSlideRef.current !== slideNumber && messages.length + (streamingMessage ? 1 : 0) > 0) {
-      setMessages((m) => [...m, { id: nextId(), role: "divider", text: `Now on Slide ${slideNumber}` }]);
-    }
-    lastSlideRef.current = slideNumber;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slideNumber]);
-
-  // Commit the streamed message once it finishes, adjusting state during render (keyed
-  // to the message id, not just status, so a later message can't be skipped because an
-  // earlier one already left "done" behind) rather than in an effect.
-  const [lastHandledStreamId, setLastHandledStreamId] = React.useState<string | null>(null);
-  if (
-    streamingMessage &&
-    (streaming.status === "done" || streaming.status === "stopped") &&
-    lastHandledStreamId !== streamingMessage.id
-  ) {
-    setLastHandledStreamId(streamingMessage.id);
-    const finalText = streaming.status === "stopped" ? `${streaming.displayed} (stopped)` : streamingMessage.text;
-    setMessages((m) => [...m, { ...streamingMessage, text: finalText }]);
-    setStreamingMessage(null);
-  }
 
   React.useEffect(() => {
     if (atBottom) listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [messages, streaming.displayed, atBottom]);
+  }, [messages, atBottom]);
 
   function onScroll() {
     const el = listRef.current;
@@ -64,60 +104,12 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 40);
   }
 
-  function pushUser(text: string) {
-    setMessages((m) => [...m, { id: nextId(), role: "user", text }]);
-    setAtBottom(true);
-  }
-
-  function sendFreeform() {
-    const text = draft.trim();
-    if (!text || streamingMessage) return;
-    pushUser(text);
-    const answer = answerFor(text, scope);
-    setStreamingMessage({ id: nextId(), role: "assistant", text: answer.text, citation: answer.citation, grounded: answer.grounded });
-    setDraft("");
-  }
-
-  function sendChip(chip: string) {
-    if (streamingMessage) return;
-    pushUser(chip);
-    if (chip === "Generate Mini-Quiz") {
-      setStreamingMessage({
-        id: nextId(),
-        role: "assistant",
-        text: "Here are two quick checks on today's material:",
-        quiz: MINI_QUIZ,
-      });
-      return;
-    }
-    const answer = answerFor(chip, scope);
-    if (chip === "Show me visually") {
-      setStreamingMessage({
-        id: nextId(),
-        role: "assistant",
-        text: answer.text,
-        citation: answer.citation,
-        grounded: answer.grounded,
-        widget: {
-          typeBadge: "trace-stepper",
-          title: "Tree Height — Call Stack Walkthrough",
-          explanation:
-            "Step through the recursive treeHeight calls, watching each frame push and pop as the answer bubbles up from the leaves.",
-          state: "ready" as const,
-        },
-      });
-    } else {
-      setStreamingMessage({
-        id: nextId(),
-        role: "assistant",
-        text: answer.text,
-        citation: answer.citation,
-        grounded: answer.grounded,
-      });
-    }
-  }
-
-  const isEmpty = messages.length === 0 && !streamingMessage;
+  const isEmpty = messages.length === 0;
+  const asMessageData = (m: Message): { id: string; role: "user" | "assistant"; text: string } => ({
+    id: m.id,
+    role: m.role === "user" ? "user" : "assistant",
+    text: m.content,
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -137,30 +129,27 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 px-2 text-center">
             <Sparkle className="size-6 text-accent-text" aria-hidden />
-            <p className="text-[14px] text-muted font-body">
-              Ask about this slide, or try one of these.
-            </p>
+            <p className="text-[14px] text-muted font-body">Ask about this slide, or try one of these.</p>
             <div className="flex flex-wrap justify-center gap-2">
-              {STARTER_CHIPS.map((chip) => (
+              {STARTER_QUESTIONS.map((q) => (
                 <button
-                  key={chip}
-                  onClick={() => sendChip(chip)}
+                  key={q}
+                  onClick={() => append({ role: "user", content: q })}
                   className="rounded-full border border-hairline bg-canvas px-3 py-1.5 text-[13px] font-body text-ink transition-colors hover:border-accent-text/50 hover:text-accent-text"
                 >
-                  {chip}
+                  {q}
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <>
-            {messages.map((m) => (
-              <ChatMessageView key={m.id} message={m} />
-            ))}
-            {streamingMessage ? (
-              <ChatMessageView message={streamingMessage} streamedText={streaming.displayed} isStreaming={streaming.status === "streaming"} />
-            ) : null}
-          </>
+          messages.map((m) => (
+            <ChatMessageView
+              key={m.id}
+              message={asMessageData(m)}
+              isStreaming={isLoading && m.id === messages[messages.length - 1]?.id && m.role === "assistant"}
+            />
+          ))
         )}
       </div>
 
@@ -176,59 +165,37 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
         </button>
       ) : null}
 
-      {!isEmpty ? (
-        <div className="flex flex-wrap gap-2 border-t border-hairline px-4 py-2">
-          {STARTER_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => sendChip(chip)}
-              disabled={!!streamingMessage}
-              className="rounded-full border border-hairline px-2.5 py-1 text-[12px] font-body text-muted transition-colors hover:border-accent-text/50 hover:text-accent-text disabled:opacity-40"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       <div className="border-t border-hairline p-3">
-        <div className="flex items-end gap-2 rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2 focus-within:border-accent-text/60">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2 rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2 focus-within:border-accent-text/60">
           <Textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, CHAR_LIMIT))}
+            value={input}
+            onChange={(e) => setInput(e.target.value.slice(0, CHAR_LIMIT))}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                sendFreeform();
+                handleSubmit();
               }
             }}
             rows={1}
             placeholder={scope === "slide" ? `Ask about Slide ${slideNumber}…` : `Ask about Lecture ${lectureNumber}…`}
             className="max-h-32 flex-1 resize-none border-0 p-0 focus:border-0"
           />
-          {streamingMessage ? (
-            <IconButton label="Stop" onClick={() => streaming.stop()}>
+          {isLoading ? (
+            <IconButton label="Stop" onClick={stop}>
               <Stop weight="fill" />
             </IconButton>
           ) : (
-            <IconButton
-              label="Send"
-              disabled={!draft.trim()}
-              onClick={sendFreeform}
-              className="text-button-primary disabled:text-muted"
-            >
+            <IconButton type="submit" label="Send" disabled={!input.trim()} className="text-button-primary disabled:text-muted">
               <PaperPlaneRight />
             </IconButton>
           )}
-        </div>
+        </form>
         <div className="mt-1 flex items-center justify-between px-1">
           <p className="text-[12px] text-muted font-body">
-            {streamingMessage
-            ? "Waiting for the response to finish loading…"
-            : `Scope: ${scope === "slide" ? `Slide ${slideNumber}` : `Lecture ${lectureNumber}`} · Enter to send`}
+            {isLoading ? "Waiting for the response to finish loading…" : `Scope: ${scope === "slide" ? `Slide ${slideNumber}` : `Lecture ${lectureNumber}`} · Enter to send`}
           </p>
-          {draft.length > CHAR_LIMIT - 200 ? (
-            <p className="text-[12px] text-muted font-body">{draft.length}/{CHAR_LIMIT}</p>
+          {input.length > CHAR_LIMIT - 200 ? (
+            <p className="text-[12px] text-muted font-body">{input.length}/{CHAR_LIMIT}</p>
           ) : null}
         </div>
         <Link

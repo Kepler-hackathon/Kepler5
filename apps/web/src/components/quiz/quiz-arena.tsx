@@ -5,36 +5,45 @@ import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { KeyboardHint } from "@/components/ui/badges";
 import { CheckGlyph, TriangleExclamationGlyph } from "@/components/ui/status-icons";
-import type { BankQuestion } from "@/lib/data/quiz-bank";
+import { apiJson } from "@/lib/api-client";
+
+export interface SessionQuestion {
+  id: string;
+  promptMd: string;
+  options: { key: string; text: string }[];
+  conceptLabel?: string;
+  lectureId?: string;
+}
 
 export interface ArenaResult {
-  question: BankQuestion;
+  question: SessionQuestion;
   status: "correct" | "incorrect" | "skipped";
-  selectedOptionId?: string;
+  selectedKey?: string;
+  correctKey?: string;
+  explanationMd?: string;
 }
 
 /** S6b Arena: explicit Next question (D9, no auto-advance), Skip, no going back. */
 export function QuizArena({
+  sessionId,
   questions,
   onFinish,
   onExit,
 }: {
-  questions: BankQuestion[];
+  sessionId: string;
+  questions: SessionQuestion[];
   onFinish: (results: ArenaResult[]) => void;
   onExit?: () => void;
 }) {
   const [index, setIndex] = React.useState(0);
   const [selected, setSelected] = React.useState<string | null>(null);
-  const [submitted, setSubmitted] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState<{ correctKey: string; explanation: string | null } | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
   const [results, setResults] = React.useState<ArenaResult[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
 
   const question = questions[index];
   const isLast = index === questions.length - 1;
-
-  const submit = React.useCallback(() => {
-    if (!selected) return;
-    setSubmitted(true);
-  }, [selected]);
 
   function advance(result: ArenaResult) {
     const next = [...results, result];
@@ -45,16 +54,48 @@ export function QuizArena({
     }
     setIndex((i) => i + 1);
     setSelected(null);
-    setSubmitted(false);
+    setSubmitted(null);
   }
 
-  function skip() {
-    advance({ question, status: "skipped" });
+  async function skip() {
+    setError(null);
+    try {
+      await apiJson(`/api/practice/sessions/${sessionId}/answers`, {
+        method: "POST",
+        body: JSON.stringify({ questionId: question.id, skipped: true }),
+      });
+      advance({ question, status: "skipped" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to skip question");
+    }
+  }
+
+  async function submit() {
+    if (!selected) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await apiJson<{ isCorrect: boolean; correctKey: string; explanation: string | null }>(
+        `/api/practice/sessions/${sessionId}/answers`,
+        { method: "POST", body: JSON.stringify({ questionId: question.id, selectedKey: selected }) },
+      );
+      setSubmitted({ correctKey: res.correctKey, explanation: res.explanation });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit answer");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function next() {
-    const option = question.options.find((o) => o.id === selected);
-    advance({ question, status: option?.correct ? "correct" : "incorrect", selectedOptionId: selected ?? undefined });
+    if (!submitted) return;
+    advance({
+      question,
+      status: selected === submitted.correctKey ? "correct" : "incorrect",
+      selectedKey: selected ?? undefined,
+      correctKey: submitted.correctKey,
+      explanationMd: submitted.explanation ?? undefined,
+    });
   }
 
   React.useEffect(() => {
@@ -64,7 +105,7 @@ export function QuizArena({
         return;
       }
       const n = Number(e.key);
-      if (n >= 1 && n <= question.options.length) setSelected(question.options[n - 1].id);
+      if (n >= 1 && n <= question.options.length) setSelected(question.options[n - 1].key);
       if (e.key === "Enter" && selected) submit();
     }
     window.addEventListener("keydown", onKeyDown);
@@ -117,43 +158,45 @@ export function QuizArena({
       <p className="mt-6 text-center text-[13px] text-muted font-body">
         Question {index + 1} of {questions.length}
       </p>
-      <h2 className="mt-2 text-center text-[26px]">{question.prompt}</h2>
+      <h2 className="mt-2 text-center text-[26px]">{question.promptMd}</h2>
 
-      <div className="mt-6 space-y-2.5" role="radiogroup" aria-label={question.prompt}>
+      <div className="mt-6 space-y-2.5" role="radiogroup" aria-label={question.promptMd}>
         {question.options.map((option, i) => {
-          const isSelected = option.id === selected;
+          const isSelected = option.key === selected;
+          const isCorrectOption = submitted && option.key === submitted.correctKey;
           return (
             <button
-              key={option.id}
+              key={option.key}
               type="button"
               role="radio"
               aria-checked={isSelected}
-              disabled={submitted}
-              onClick={() => setSelected(option.id)}
+              disabled={!!submitted}
+              onClick={() => setSelected(option.key)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-[var(--radius-control)] border bg-surface-card px-4 py-3 text-left text-[15px] font-body transition-colors",
                 !submitted && isSelected && "border-button-primary",
                 !submitted && !isSelected && "border-hairline hover:border-body",
-                submitted && isSelected && option.correct && "border-success bg-success/10",
-                submitted && isSelected && !option.correct && "border-error bg-error/10",
-                submitted && !isSelected && "border-hairline opacity-60"
+                submitted && isCorrectOption && "border-success bg-success/10",
+                submitted && isSelected && !isCorrectOption && "border-error bg-error/10",
+                submitted && !isSelected && !isCorrectOption && "border-hairline opacity-60"
               )}
             >
               <KeyboardHint>{i + 1}</KeyboardHint>
               <span className="flex-1 text-ink">{option.text}</span>
-              {submitted && isSelected && option.correct ? <CheckGlyph className="text-success" /> : null}
-              {submitted && isSelected && !option.correct ? <TriangleExclamationGlyph className="text-error" /> : null}
+              {submitted && isCorrectOption ? <CheckGlyph className="text-success" /> : null}
+              {submitted && isSelected && !isCorrectOption ? <TriangleExclamationGlyph className="text-error" /> : null}
             </button>
           );
         })}
       </div>
 
-      {submitted ? (
-        <p className="mt-4 text-[14px] leading-relaxed text-body font-body">{question.correctExplanation}</p>
+      {submitted?.explanation ? (
+        <p className="mt-4 text-[14px] leading-relaxed text-body font-body">{submitted.explanation}</p>
       ) : null}
+      {error ? <p className="mt-4 text-[13px] text-error font-body">{error}</p> : null}
 
       <div className="mt-6 flex items-center justify-between">
-        <Button variant="ghost" onClick={skip} disabled={submitted}>
+        <Button variant="ghost" onClick={skip} disabled={!!submitted || submitting}>
           Skip
         </Button>
         {submitted ? (
@@ -161,7 +204,7 @@ export function QuizArena({
             {isLast ? "See results" : "Next question"}
           </Button>
         ) : (
-          <Button variant="primary" disabled={!selected} disabledReason="Select an answer first" onClick={submit}>
+          <Button variant="primary" disabled={!selected || submitting} disabledReason="Select an answer first" onClick={submit}>
             Check answer
           </Button>
         )}

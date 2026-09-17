@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { streamText, convertToCoreMessages } from 'ai'
 import { db, chatThreads, chatMessages, lectures, slides, modules, courses, generationJobs } from '@kepler/db'
@@ -9,6 +9,41 @@ import { checkChatBudget } from '@/lib/budget'
 import { enqueueJob } from '@/lib/sqs'
 
 export const dynamic = 'force-dynamic'
+
+// No route previously existed to load a thread's message history (only POST to send a new
+// one) — needed so the client can restore a saved conversation, e.g. via ai/react's
+// useChat({ initialMessages }).
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const identity = getIdentity(req)
+  if (!identity) return apiError('identity_required', 'Identity headers required', 400)
+
+  const { id } = await params
+  const [thread] = await db.select().from(chatThreads).where(eq(chatThreads.id, id))
+  if (!thread) return apiError('not_found', 'Thread not found', 404)
+  if (thread.userId !== identity.userId) return apiError('forbidden', 'Access denied', 403)
+
+  const history = await db
+    .select()
+    .from(chatMessages)
+    .where(eq(chatMessages.threadId, id))
+    .orderBy(asc(chatMessages.createdAt))
+
+  return NextResponse.json(
+    history.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: Array.isArray(m.parts)
+        ? (m.parts as Array<{ type: string; text?: string }>)
+            .filter((p) => p.type === 'text')
+            .map((p) => p.text ?? '')
+            .join('')
+        : '',
+    })),
+  )
+}
 
 const bedrock = createAmazonBedrock({ region: process.env.AWS_REGION ?? 'us-east-1' })
 

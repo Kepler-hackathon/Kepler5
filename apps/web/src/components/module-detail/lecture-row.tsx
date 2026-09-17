@@ -5,22 +5,22 @@ import { Button } from "@/components/ui/button";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { ProgressRing } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
-import type { LectureSummary } from "@/lib/data/curriculum";
+import type { ApiLecture } from "./types";
 
-/** Lecture row status matrix (frontend plan S3): not-started/in-progress/completed, each with its own CTA. */
-export function LectureRow({ lecture }: { lecture: LectureSummary }) {
+export function LectureRow({ lecture }: { lecture: ApiLecture }) {
   const toast = useToast();
-  const notBuilt = () => toast.push({ message: "This lecture doesn't have authored content in this preview." });
+  const hasContent = lecture.parseStatus === "parsed";
+  const done = !!lecture.progress?.completedAt;
+  const inProgress = !done && (lecture.progress?.maxSlideIndex ?? 0) > 0;
 
-  const cta =
-    lecture.status === "done" ? "Review" : lecture.status === "in-progress" ? "Resume" : "Start Lecture";
+  const status = done
+    ? { kind: "done" as const, label: "Completed" }
+    : inProgress
+      ? { kind: "in-progress" as const, label: "In progress" }
+      : { kind: "not-started" as const, label: lecture.parseStatus === "failed" ? "Parse failed" : "Not started" };
 
-  const status =
-    lecture.status === "done"
-      ? { kind: "done" as const, label: "Completed" }
-      : lecture.status === "in-progress"
-        ? { kind: "in-progress" as const, label: "In progress" }
-        : { kind: "not-started" as const, label: "Not started" };
+  const cta = done ? "Review" : inProgress ? "Resume" : "Start Lecture";
+  const href = `/lecture/${lecture.id}${lecture.progress?.maxSlideIndex ? `?slide=${lecture.progress.maxSlideIndex}` : ""}`;
 
   return (
     <div className="flex items-center justify-between gap-4 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-3.5">
@@ -32,17 +32,25 @@ export function LectureRow({ lecture }: { lecture: LectureSummary }) {
         )}
         <div className="min-w-0">
           <p className="truncate text-[15px] font-medium font-body text-ink">
-            Lecture {lecture.number}: {lecture.title}
+            {lecture.orderIndex}. {lecture.title}
           </p>
-          <p className="text-[12px] text-muted font-body">{status.label}</p>
+          <p className="text-[12px] text-muted font-body">
+            {status.label}
+            {lecture.slideCount ? ` · ${lecture.slideCount} slides` : ""}
+          </p>
         </div>
       </div>
-      {lecture.hasContent ? (
-        <Button asChild variant={lecture.status === "in-progress" ? "primary" : "secondary"} size="sm" className="shrink-0">
-          <Link href={`/lecture/${lecture.number}${lecture.resumeSlide ? `?slide=${lecture.resumeSlide}` : ""}`}>{cta}</Link>
+      {hasContent ? (
+        <Button asChild variant={inProgress ? "primary" : "secondary"} size="sm" className="shrink-0">
+          <Link href={href}>{cta}</Link>
         </Button>
       ) : (
-        <Button variant="secondary" size="sm" className="shrink-0" onClick={notBuilt}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => toast.push({ message: `This lecture isn't parsed yet (${lecture.parseStatus}).` })}
+        >
           {cta}
         </Button>
       )}

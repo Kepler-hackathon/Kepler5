@@ -10,95 +10,99 @@ import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
-import { peerWidgets, type PeerWidget } from "@/lib/data/peer-widgets";
-import { forumThreads, type ForumThread } from "@/lib/data/forum";
+import { apiJson, ApiError } from "@/lib/api-client";
+import { useIdentity } from "@/lib/identity";
+import { displayNameFor } from "@/lib/display-name";
+import { timeAgo } from "@/lib/time-ago";
+import type { FaqThreadRow } from "@/components/forum/questions-tab";
+import type { ModuleOption } from "@/components/forum/forum";
 
-type ReviewStatus = "in-review" | "approved" | "changes-requested" | "archived";
+type PeerStatus = "collecting" | "in_review" | "changes_requested" | "merged" | "archived";
+
+interface PeerWidgetRow {
+  id: string;
+  authorId: string;
+  title: string;
+  content: Record<string, unknown>;
+  tagLectureId: string | null;
+  status: PeerStatus;
+  upvoteCount: number;
+}
+
+interface PlacementSlide {
+  id: string;
+  index: number;
+}
+
+function widgetExplanation(content: Record<string, unknown>): string {
+  if (typeof content.explanationMd === "string") return content.explanationMd;
+  if (typeof content.text === "string") return content.text;
+  return "No explanation available.";
+}
+
+function widgetTypeBadge(content: Record<string, unknown>): string {
+  if (typeof content.kind === "string") return content.kind;
+  if (typeof content.family === "string") return content.family;
+  return "widget";
+}
 
 function WidgetReviewCard({
   widget,
-  status,
-  note,
   onApprove,
   onRequestChanges,
   onArchive,
-  onUndo,
 }: {
-  widget: PeerWidget;
-  status: ReviewStatus;
-  note: string;
-  onApprove: () => void;
-  onRequestChanges: (note: string) => void;
-  onArchive: () => void;
-  onUndo: () => void;
+  widget: PeerWidgetRow;
+  onApprove: (afterSlideId: string) => Promise<void>;
+  onRequestChanges: (note: string) => Promise<void>;
+  onArchive: () => Promise<void>;
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const [draftNote, setDraftNote] = React.useState("");
   const [showNoteForm, setShowNoteForm] = React.useState(false);
+  const [slides, setSlides] = React.useState<PlacementSlide[]>([]);
+  const [selectedSlideId, setSelectedSlideId] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  const identity = useIdentity();
+
+  React.useEffect(() => {
+    if (!expanded || identity?.role !== "teacher") return;
+    apiJson<{ lectureId: string | null; slides: PlacementSlide[] }>(`/api/review/${widget.id}/placement`)
+      .then((data) => {
+        setSlides(data.slides);
+        if (data.slides[0]) setSelectedSlideId(data.slides[0].id);
+      })
+      .catch(() => {});
+  }, [expanded, widget.id, identity]);
 
   return (
     <div className="rounded-[var(--radius-card)] border border-hairline bg-surface-card p-5">
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-start justify-between gap-3 text-left"
-      >
+      <button onClick={() => setExpanded((v) => !v)} className="flex w-full items-start justify-between gap-3 text-left">
         <div className="min-w-0">
           <p className="text-[15px] font-medium font-body text-ink">{widget.title}</p>
           <p className="mt-0.5 text-[12px] text-muted font-body">
-            {widget.creator} · Lecture {widget.sourceLecture} · {widget.upvotes} upvote{widget.upvotes !== 1 ? "s" : ""}
+            {displayNameFor(widget.authorId, identity?.userId)} · {widget.upvoteCount} upvote{widget.upvoteCount !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {status === "approved" && (
-            <span className="rounded-full border border-success/30 bg-success/10 px-2.5 py-0.5 text-[12px] font-medium font-body text-success">
-              Approved
-            </span>
-          )}
-          {status === "changes-requested" && (
-            <span className="rounded-full border border-[#bb5a3a]/30 bg-[#bb5a3a]/10 px-2.5 py-0.5 text-[12px] font-medium font-body text-accent-text">
-              Changes requested
-            </span>
-          )}
-          {status === "archived" && (
-            <span className="rounded-full border border-hairline bg-canvas px-2.5 py-0.5 text-[12px] font-body text-muted">
-              Archived
-            </span>
-          )}
-          <CaretDown className={cn("size-4 text-muted transition-transform", expanded && "rotate-180")} />
-        </div>
+        <CaretDown className={cn("size-4 shrink-0 text-muted transition-transform", expanded && "rotate-180")} />
       </button>
 
       {expanded ? (
         <div className="mt-4 space-y-4">
-          <WidgetSlot
-            typeBadge={widget.typeBadge}
-            title={widget.title}
-            explanation={widget.explanation}
-            size="compact"
-          />
-
-          {status === "changes-requested" && note ? (
-            <div className="rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2">
-              <p className="text-[12px] font-medium font-body text-muted">Your note to the student:</p>
-              <p className="mt-1 text-[13px] text-body font-body">{note}</p>
-            </div>
-          ) : null}
+          <WidgetSlot typeBadge={widgetTypeBadge(widget.content)} title={widget.title} explanation={widgetExplanation(widget.content)} size="compact" />
 
           {showNoteForm ? (
             <div className="space-y-2">
-              <Textarea
-                rows={3}
-                value={draftNote}
-                onChange={(e) => setDraftNote(e.target.value)}
-                placeholder="Explain what needs to change…"
-              />
+              <Textarea rows={3} value={draftNote} onChange={(e) => setDraftNote(e.target.value)} placeholder="Explain what needs to change…" />
               <div className="flex gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={!draftNote.trim()}
-                  onClick={() => {
-                    onRequestChanges(draftNote.trim());
+                  disabled={!draftNote.trim() || busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    await onRequestChanges(draftNote.trim());
+                    setBusy(false);
                     setShowNoteForm(false);
                     setDraftNote("");
                   }}
@@ -110,30 +114,55 @@ function WidgetReviewCard({
                 </Button>
               </div>
             </div>
-          ) : null}
-
-          {status === "in-review" && !showNoteForm ? (
-            <div className="flex flex-wrap gap-2">
-              <Button variant="primary" size="sm" onClick={onApprove}>
-                <CheckCircle className="size-4" /> Approve
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => setShowNoteForm(true)}>
-                <Warning className="size-4" /> Request changes
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onArchive}>
-                <Archive className="size-4" /> Archive
-              </Button>
+          ) : (
+            <div className="space-y-3">
+              {slides.length > 0 ? (
+                <label className="block text-[12px] font-medium font-body text-muted">
+                  Insert after slide
+                  <select
+                    value={selectedSlideId}
+                    onChange={(e) => setSelectedSlideId(e.target.value)}
+                    className="mt-1 block w-full rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2 text-[14px] text-ink font-body"
+                  >
+                    {slides.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        Slide (index {s.index})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={busy || !selectedSlideId}
+                  onClick={async () => {
+                    setBusy(true);
+                    await onApprove(selectedSlideId);
+                    setBusy(false);
+                  }}
+                >
+                  <CheckCircle className="size-4" /> Approve
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setShowNoteForm(true)}>
+                  <Warning className="size-4" /> Request changes
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    await onArchive();
+                    setBusy(false);
+                  }}
+                >
+                  <Archive className="size-4" /> Archive
+                </Button>
+              </div>
             </div>
-          ) : null}
-
-          {(status === "approved" || status === "changes-requested" || status === "archived") ? (
-            <button
-              onClick={onUndo}
-              className="text-[12px] font-body text-muted underline-offset-2 hover:text-ink hover:underline"
-            >
-              Undo
-            </button>
-          ) : null}
+          )}
         </div>
       ) : null}
     </div>
@@ -142,44 +171,50 @@ function WidgetReviewCard({
 
 function QuestionReviewRow({
   thread,
-  endorsed,
+  moduleName,
   onEndorse,
 }: {
-  thread: ForumThread;
-  endorsed: boolean;
-  onEndorse: () => void;
+  thread: FaqThreadRow;
+  moduleName: string;
+  onEndorse: () => Promise<void>;
 }) {
+  const identity = useIdentity();
+  const [busy, setBusy] = React.useState(false);
+
   return (
     <div className="flex items-start justify-between gap-3 rounded-[var(--radius-control)] border border-hairline bg-surface-card p-4">
       <div className="min-w-0">
         <p className="text-[14px] font-medium font-body text-ink">{thread.title}</p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <Avatar name={thread.author} size="sm" />
+          <Avatar name={displayNameFor(thread.authorId, identity?.userId)} size="sm" />
           <span className="text-[12px] text-muted font-body">
-            {thread.author} · {thread.timeAgo} · Module {thread.moduleNumber}
+            {displayNameFor(thread.authorId, identity?.userId)} · {timeAgo(thread.createdAt)} · {moduleName}
           </span>
           {thread.replyCount === 0 ? (
-            <span className="rounded-full border border-error/30 bg-error/8 px-2 py-0.5 text-[11px] text-error font-body">
-              Unanswered
-            </span>
+            <span className="rounded-full border border-error/30 bg-error/8 px-2 py-0.5 text-[11px] text-error font-body">Unanswered</span>
           ) : (
-            <span className="text-[12px] text-muted font-body">{thread.replyCount} repl{thread.replyCount === 1 ? "y" : "ies"}</span>
+            <span className="text-[12px] text-muted font-body">
+              {thread.replyCount} repl{thread.replyCount === 1 ? "y" : "ies"}
+            </span>
           )}
         </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-body font-body line-clamp-2">{thread.body}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-body font-body line-clamp-2">{thread.bodyMd}</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
-        {endorsed ? (
-          <span className="flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-[12px] font-medium font-body text-success">
-            <CheckCircle className="size-3.5" /> Endorsed
-          </span>
-        ) : (
-          <Button variant="secondary" size="sm" onClick={onEndorse}>
-            Endorse
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await onEndorse();
+            setBusy(false);
+          }}
+        >
+          Endorse
+        </Button>
         <div className="flex items-center gap-1 text-[12px] text-muted font-body">
-          <CaretUp className="size-3.5" /> {thread.upvotes}
+          <CaretUp className="size-3.5" /> {thread.upvoteCount}
         </div>
       </div>
     </div>
@@ -188,135 +223,152 @@ function QuestionReviewRow({
 
 export function ReviewQueue({ courseId }: { courseId: string }) {
   const toast = useToast();
+  const identity = useIdentity();
+  const [widgets, setWidgets] = React.useState<PeerWidgetRow[]>([]);
+  const [threads, setThreads] = React.useState<FaqThreadRow[]>([]);
+  const [modules, setModules] = React.useState<ModuleOption[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const reviewableWidgets = peerWidgets.filter((w) => w.status === "in-review");
+  const loadWidgets = React.useCallback(() => {
+    apiJson<{ widgets: PeerWidgetRow[] }>("/api/review?status=in_review")
+      .then((data) => setWidgets(data.widgets))
+      .catch(() => {});
+  }, []);
 
-  const [widgetStatuses, setWidgetStatuses] = React.useState<Record<string, ReviewStatus>>(() =>
-    Object.fromEntries(reviewableWidgets.map((w) => [w.id, "in-review" as ReviewStatus]))
-  );
-  const [widgetNotes, setWidgetNotes] = React.useState<Record<string, string>>({});
+  React.useEffect(() => {
+    if (!identity || identity.role !== "teacher") return;
+    setLoading(true);
+    Promise.all([
+      apiJson<{ threads: FaqThreadRow[] }>("/api/faq/threads?includeLogistics=true&limit=50"),
+      apiJson<{ modules: { id: string; name: string }[] }>("/api/course"),
+    ])
+      .then(([threadData, courseData]) => {
+        setThreads(threadData.threads.filter((t) => !t.endorsed));
+        setModules(courseData.modules.map((m) => ({ id: m.id, name: m.name })));
+      })
+      .catch(() => {});
+    loadWidgets();
+    setLoading(false);
+  }, [identity, loadWidgets]);
 
-  const pendingCount = Object.values(widgetStatuses).filter((s) => s === "in-review").length;
+  const pendingCount = widgets.length;
+  const moduleName = (id: string) => modules.find((m) => m.id === id)?.name ?? "Module";
 
-  const unendorsedThreads = forumThreads.filter((t) => !t.endorsed);
-  const [endorsedIds, setEndorsedIds] = React.useState<Set<string>>(new Set());
-
-  function approveWidget(id: string) {
-    setWidgetStatuses((prev) => ({ ...prev, [id]: "approved" }));
-    toast.push({ message: "Merged into lesson · students will see it immediately" });
+  async function approveWidget(id: string, afterSlideId: string) {
+    try {
+      await apiJson(`/api/review/${id}/approve`, { method: "POST", body: JSON.stringify({ afterSlideId }) });
+      setWidgets((prev) => prev.filter((w) => w.id !== id));
+      toast.push({ message: "Merged into lesson · students will see it immediately" });
+    } catch (err) {
+      toast.push({ message: err instanceof ApiError ? err.message : "Failed to approve" });
+    }
   }
 
-  function requestChanges(id: string, note: string) {
-    setWidgetStatuses((prev) => ({ ...prev, [id]: "changes-requested" }));
-    setWidgetNotes((prev) => ({ ...prev, [id]: note }));
-    toast.push({ message: "Feedback sent · student can revise and resubmit" });
+  async function requestChanges(id: string, note: string) {
+    try {
+      await apiJson(`/api/review/${id}/request-edits`, { method: "POST", body: JSON.stringify({ teacherNote: note }) });
+      setWidgets((prev) => prev.filter((w) => w.id !== id));
+      toast.push({ message: "Feedback sent · student can revise and resubmit" });
+    } catch (err) {
+      toast.push({ message: err instanceof ApiError ? err.message : "Failed to send feedback" });
+    }
   }
 
-  function archiveWidget(id: string) {
-    setWidgetStatuses((prev) => ({ ...prev, [id]: "archived" }));
-    toast.push({ message: "Widget archived · student notified" });
+  async function archiveWidget(id: string) {
+    try {
+      await apiJson(`/api/review/${id}/decline`, { method: "POST", body: JSON.stringify({}) });
+      setWidgets((prev) => prev.filter((w) => w.id !== id));
+      toast.push({ message: "Widget archived · student notified" });
+    } catch (err) {
+      toast.push({ message: err instanceof ApiError ? err.message : "Failed to archive" });
+    }
   }
 
-  function undoWidget(id: string) {
-    setWidgetStatuses((prev) => ({ ...prev, [id]: "in-review" }));
-    setWidgetNotes((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+  async function endorseThread(id: string) {
+    try {
+      await apiJson(`/api/faq/threads/${id}/endorse`, { method: "POST" });
+      setThreads((prev) => prev.filter((t) => t.id !== id));
+      toast.push({ message: "Thread endorsed · pinned for the class" });
+    } catch (err) {
+      toast.push({ message: err instanceof ApiError ? err.message : "Failed to endorse" });
+    }
   }
 
-  function endorseThread(id: string) {
-    setEndorsedIds((prev) => new Set([...prev, id]));
-    toast.push({ message: "Thread endorsed · pinned for the class" });
+  if (identity && identity.role !== "teacher") {
+    return (
+      <div className="min-h-screen bg-canvas">
+        <AppNav courseId={courseId} activeHref={`/course/${courseId}/review`} />
+        <main className="mx-auto max-w-3xl px-6 py-10">
+          <p className="text-[15px] text-muted font-body">The review queue is only available to teachers.</p>
+        </main>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-canvas">
       <AppNav courseId={courseId} activeHref={`/course/${courseId}/review`} />
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <p className="text-[13px] font-medium font-body uppercase tracking-[1px] text-accent-text">
-          Review queue
-        </p>
+        <p className="text-[13px] font-medium font-body uppercase tracking-[1px] text-accent-text">Review queue</p>
         <h1 className="mt-1">Student submissions</h1>
-        <p className="mt-2 text-[15px] text-muted font-body">
-          Approve or give feedback on widget submissions, and endorse quality questions.
-        </p>
+        <p className="mt-2 text-[15px] text-muted font-body">Approve or give feedback on widget submissions, and endorse quality questions.</p>
 
-        <div className="mt-8">
-          <Tabs defaultValue="widgets">
-            <TabList>
-              <TabTrigger value="widgets">
-                Widgets
-                {pendingCount > 0 ? (
-                  <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-[#bb5a3a] text-[10px] font-medium text-white">
-                    {pendingCount}
-                  </span>
-                ) : null}
-              </TabTrigger>
-              <TabTrigger value="questions">
-                Questions
-                {unendorsedThreads.length - endorsedIds.size > 0 ? (
-                  <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-surface-card text-[10px] font-medium text-muted border border-hairline">
-                    {unendorsedThreads.length - endorsedIds.size}
-                  </span>
-                ) : null}
-              </TabTrigger>
-            </TabList>
-
-            <TabPanel value="widgets" className="mt-6">
-              {reviewableWidgets.length === 0 ? (
-                <p className="py-12 text-center text-[15px] text-muted font-body">
-                  No widget submissions waiting for review.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {pendingCount === 0 ? (
-                    <div className="rounded-[var(--radius-control)] border border-success/30 bg-success/8 px-4 py-3 text-[14px] font-body text-success-text">
-                      Queue is clear — all submissions reviewed.
-                    </div>
+        {loading ? (
+          <p className="mt-8 text-center text-[15px] text-muted font-body">Loading…</p>
+        ) : (
+          <div className="mt-8">
+            <Tabs defaultValue="widgets">
+              <TabList>
+                <TabTrigger value="widgets">
+                  Widgets
+                  {pendingCount > 0 ? (
+                    <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-[#bb5a3a] text-[10px] font-medium text-white">
+                      {pendingCount}
+                    </span>
                   ) : null}
-                  {reviewableWidgets.map((w) => (
-                    <WidgetReviewCard
-                      key={w.id}
-                      widget={w}
-                      status={widgetStatuses[w.id] ?? "in-review"}
-                      note={widgetNotes[w.id] ?? ""}
-                      onApprove={() => approveWidget(w.id)}
-                      onRequestChanges={(note) => requestChanges(w.id, note)}
-                      onArchive={() => archiveWidget(w.id)}
-                      onUndo={() => undoWidget(w.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabPanel>
-
-            <TabPanel value="questions" className="mt-6">
-              {unendorsedThreads.length === 0 ? (
-                <p className="py-12 text-center text-[15px] text-muted font-body">
-                  All questions have been endorsed — great work!
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {endorsedIds.size >= unendorsedThreads.length ? (
-                    <div className="mb-1 rounded-[var(--radius-control)] border border-success/30 bg-success/8 px-4 py-3 text-[14px] font-body text-success-text">
-                      All questions endorsed — queue is clear.
-                    </div>
+                </TabTrigger>
+                <TabTrigger value="questions">
+                  Questions
+                  {threads.length > 0 ? (
+                    <span className="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-surface-card text-[10px] font-medium text-muted border border-hairline">
+                      {threads.length}
+                    </span>
                   ) : null}
-                  {unendorsedThreads.map((t) => (
-                    <QuestionReviewRow
-                      key={t.id}
-                      thread={t}
-                      endorsed={endorsedIds.has(t.id)}
-                      onEndorse={() => endorseThread(t.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabPanel>
-          </Tabs>
-        </div>
+                </TabTrigger>
+              </TabList>
+
+              <TabPanel value="widgets" className="mt-6">
+                {widgets.length === 0 ? (
+                  <p className="py-12 text-center text-[15px] text-muted font-body">No widget submissions waiting for review.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {widgets.map((w) => (
+                      <WidgetReviewCard
+                        key={w.id}
+                        widget={w}
+                        onApprove={(afterSlideId) => approveWidget(w.id, afterSlideId)}
+                        onRequestChanges={(note) => requestChanges(w.id, note)}
+                        onArchive={() => archiveWidget(w.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabPanel>
+
+              <TabPanel value="questions" className="mt-6">
+                {threads.length === 0 ? (
+                  <p className="py-12 text-center text-[15px] text-muted font-body">All questions have been endorsed — great work!</p>
+                ) : (
+                  <div className="space-y-2">
+                    {threads.map((t) => (
+                      <QuestionReviewRow key={t.id} thread={t} moduleName={moduleName(t.tagModuleId)} onEndorse={() => endorseThread(t.id)} />
+                    ))}
+                  </div>
+                )}
+              </TabPanel>
+            </Tabs>
+          </div>
+        )}
       </main>
     </div>
   );

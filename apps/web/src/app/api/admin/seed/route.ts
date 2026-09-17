@@ -79,7 +79,10 @@ export async function POST(req: NextRequest) {
         createdBy: SEED.teacherId,
         orderIndex: 1,
         publishedAt: new Date(),
-      }).onConflictDoNothing()
+      // A bare onConflictDoNothing() fails here: Postgres can't use a deferrable unique
+      // constraint (modules_course_id_order_index_unique, migration 0001) as an implicit
+      // arbiter, so an explicit target (the PK) is required.
+      }).onConflictDoNothing({ target: modules.id })
 
       // Lectures
       await tx.insert(lectures).values({
@@ -91,7 +94,7 @@ export async function POST(req: NextRequest) {
         slideCount: 2,
         estimatedMinutes: 3,
         bundleVersion: 1,
-      }).onConflictDoNothing()
+      }).onConflictDoNothing({ target: lectures.id }) // same deferrable-constraint issue (lectures_module_id_order_index_unique)
 
       await tx.insert(lectures).values({
         id: SEED.lecture2Id,
@@ -102,7 +105,7 @@ export async function POST(req: NextRequest) {
         slideCount: 1,
         estimatedMinutes: 2,
         bundleVersion: 1,
-      }).onConflictDoNothing()
+      }).onConflictDoNothing({ target: lectures.id })
 
       // Slides for lecture 1
       await tx.insert(slides).values({

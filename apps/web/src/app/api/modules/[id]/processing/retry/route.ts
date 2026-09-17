@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn'
 import { db, modules, lectures, processingRuns, lectureProcessing } from '@kepler/db'
 import { eq, and, inArray, desc } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { enforceTeacher } from '@/lib/middleware/role'
 import { apiError } from '@/lib/errors'
+import { retryProcessModule } from '@/lib/sfn'
 
 export const dynamic = 'force-dynamic'
-
-const sfn = new SFNClient({ region: process.env.AWS_REGION ?? 'us-east-1' })
 
 export async function POST(
   req: NextRequest,
@@ -96,31 +94,11 @@ export async function POST(
     return run!.id
   })
 
-  const stateMachineArn = process.env.PROCESS_MODULE_STATE_MACHINE_ARN
-  if (stateMachineArn) {
-    try {
-      const result = await sfn.send(
-        new StartExecutionCommand({
-          stateMachineArn,
-          name: runId,
-          input: JSON.stringify({
-            runId,
-            moduleId: id,
-            lectureIds: targetLectures.map((l) => l.id),
-          }),
-        }),
-      )
-      await db
-        .update(processingRuns)
-        .set({ status: 'running', executionArn: result.executionArn })
-        .where(eq(processingRuns.id, runId))
-    } catch (err) {
-      console.error('[processing/retry] Failed to start Step Functions execution:', err)
-    }
-  } else {
-    console.warn('[processing/retry] PROCESS_MODULE_STATE_MACHINE_ARN not set')
-    await db.update(processingRuns).set({ status: 'running' }).where(eq(processingRuns.id, runId))
-  }
+  await retryProcessModule({
+    runId,
+    moduleId: id,
+    lectureIds: targetLectures.map((l) => l.id),
+  })
 
   return NextResponse.json({ runId, status: 'running' }, { status: 202 })
 }

@@ -6,12 +6,23 @@ import { ChatCircleDots } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { KeplerMark } from "./kepler-mark";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { courseById } from "@/lib/data/courses";
+
+interface CourseLabel {
+  code: string | null;
+  title: string;
+}
 
 /** Global nav shell (frontend plan Part I §5.1). */
-export function AppNav({ courseId, activeHref = "/courses" }: { courseId: string; activeHref?: string }) {
+export function AppNav({
+  courseId,
+  course,
+  activeHref = "/courses",
+}: {
+  courseId: string;
+  course?: CourseLabel | null;
+  activeHref?: string;
+}) {
   const [role, setRole] = React.useState<"student" | "teacher">("student");
-  const course = courseById(courseId);
   const courseHref = `/course/${courseId}`;
 
   React.useEffect(() => {

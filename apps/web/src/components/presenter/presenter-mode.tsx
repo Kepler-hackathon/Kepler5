@@ -4,24 +4,25 @@ import * as React from "react";
 import { X, CaretDown, CaretUp } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { SlideStage } from "@/components/slide-viewer/slide-stage";
-import type { Lecture } from "@/lib/data/types";
+import { apiJson, ApiError } from "@/lib/api-client";
+import type { ApiSlide } from "@/components/slide-viewer/types";
 
-/**
- * Screen 12 — Presenter Mode (frontend plan Part III §3, S12). Iterates `lecture.slides`
- * directly (supplementary slides included, quizzes/widgets excluded per spec) rather than
- * the interleaved `stops` the main viewer uses.
- */
+/** Screen 12 — Presenter Mode. Fetches the teacher-only presenter slide list
+ * (GET /api/lectures/[id]/presenter — includes notes) directly. */
 export function PresenterMode({
-  lecture,
+  lectureId,
+  lectureTitle,
   initialSlideNumber,
   onExit,
 }: {
-  lecture: Lecture;
+  lectureId: string;
+  lectureTitle: string;
   initialSlideNumber: number;
   onExit: (currentSlideNumber: number) => void;
 }) {
-  const initialIndex = Math.max(0, lecture.slides.findIndex((s) => s.number === initialSlideNumber));
-  const [index, setIndex] = React.useState(initialIndex);
+  const [slides, setSlides] = React.useState<ApiSlide[] | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [index, setIndex] = React.useState(0);
   const [blanked, setBlanked] = React.useState(false);
   const [darkSurround, setDarkSurround] = React.useState(false);
   const [notesOpen, setNotesOpen] = React.useState(false);
@@ -29,11 +30,23 @@ export function PresenterMode({
   const hideTimer = React.useRef<number | undefined>(undefined);
   const wakeLockRef = React.useRef<{ release: () => Promise<void> } | null>(null);
 
-  const slide = lecture.slides[index];
-  const isFirst = index === 0;
-  const isLast = index === lecture.slides.length - 1;
+  React.useEffect(() => {
+    apiJson<{ slides: ApiSlide[] }>(`/api/lectures/${lectureId}/presenter`)
+      .then((data) => {
+        setSlides(data.slides);
+        const idx = data.slides.findIndex((s) => (s.index ?? 0) + 1 === initialSlideNumber);
+        setIndex(Math.max(0, idx));
+      })
+      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load presenter slides"));
+    // Only load once per mount — initialSlideNumber is a starting point, not a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectureId]);
 
-  const goNext = React.useCallback(() => setIndex((i) => Math.min(lecture.slides.length - 1, i + 1)), [lecture.slides.length]);
+  const slide = slides?.[index];
+  const isFirst = index === 0;
+  const isLast = !!slides && index === slides.length - 1;
+
+  const goNext = React.useCallback(() => setIndex((i) => Math.min((slides?.length ?? 1) - 1, i + 1)), [slides?.length]);
   const goPrev = React.useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
   React.useEffect(() => {
@@ -46,27 +59,38 @@ export function PresenterMode({
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !e.shiftKey)) {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "ArrowLeft" || e.key === "PageUp" || (e.key === " " && e.shiftKey)) {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "Home") setIndex(0);
-      else if (e.key === "End") setIndex(lecture.slides.length - 1);
+      if (!slide) return;
+      const exitSlideNumber = (slide.index ?? 0) + 1;
+      if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !e.shiftKey)) { e.preventDefault(); goNext(); }
+      else if (e.key === "ArrowLeft" || e.key === "PageUp" || (e.key === " " && e.shiftKey)) { e.preventDefault(); goPrev(); }
+      else if (e.key === "Home") setIndex(0);
+      else if (e.key === "End") setIndex((slides?.length ?? 1) - 1);
       else if (e.key.toLowerCase() === "b") setBlanked((v) => !v);
       else if (e.key.toLowerCase() === "d") setDarkSurround((v) => !v);
-      else if (e.key.toLowerCase() === "q") onExit(slide.number);
-      else if (e.key === "Escape") onExit(slide.number);
+      else if (e.key.toLowerCase() === "q") onExit(exitSlideNumber);
+      else if (e.key === "Escape") onExit(exitSlideNumber);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goNext, goPrev, lecture.slides.length, onExit, slide.number]);
+  }, [goNext, goPrev, slides?.length, onExit, slide]);
 
   function onMouseMove() {
     setChromeVisible(true);
     window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(() => setChromeVisible(false), 3000);
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-canvas text-center">
+        <p className="text-[15px] text-muted font-body">{error}</p>
+        <button onClick={() => onExit(initialSlideNumber)} className="text-[13px] font-medium font-body text-accent-text">Exit</button>
+      </div>
+    );
+  }
+
+  if (!slide) {
+    return <div className="fixed inset-0 z-50 bg-canvas" />;
   }
 
   return (
@@ -78,10 +102,10 @@ export function PresenterMode({
         )}
       >
         <p className="text-[13px] text-muted font-body">
-          {lecture.title} · Slide {index + 1} of {lecture.slides.length}
+          {lectureTitle} · Slide {index + 1} of {slides?.length ?? "?"}
         </p>
         <div className="flex items-center gap-3">
-          {slide.presenterNotes ? (
+          {slide.notes ? (
             <button
               onClick={() => setNotesOpen((v) => !v)}
               className="flex items-center gap-1 text-[13px] font-medium font-body text-muted hover:text-ink"
@@ -97,7 +121,7 @@ export function PresenterMode({
             {darkSurround ? "Light surround" : "Dark surround"}
           </button>
           <button
-            onClick={() => onExit(slide.number)}
+            onClick={() => onExit((slide.index ?? 0) + 1)}
             className="flex items-center gap-1.5 text-[13px] font-medium font-body text-muted hover:text-ink"
           >
             <X className="size-4" /> Exit (Q)
@@ -117,10 +141,10 @@ export function PresenterMode({
         )}
       </div>
 
-      {slide.presenterNotes && notesOpen ? (
+      {slide.notes && notesOpen ? (
         <div className="shrink-0 border-t border-hairline bg-surface-card px-6 py-4">
           <p className="text-[11px] font-medium font-body uppercase tracking-[0.5px] text-muted">Visible on this screen</p>
-          <p className="mt-1 text-[14px] leading-relaxed text-body font-body">{slide.presenterNotes}</p>
+          <p className="mt-1 text-[14px] leading-relaxed text-body font-body">{slide.notes}</p>
         </div>
       ) : null}
 
@@ -130,18 +154,10 @@ export function PresenterMode({
           !chromeVisible && "pointer-events-none opacity-0"
         )}
       >
-        <button onClick={goPrev} disabled={isFirst} className="text-[13px] font-body text-muted disabled:opacity-30">
-          ← Previous
-        </button>
-        <button onClick={() => setBlanked((v) => !v)} className="text-[13px] font-body text-muted">
-          {blanked ? "Resume (B)" : "Blank (B)"}
-        </button>
-        <button onClick={() => setDarkSurround((v) => !v)} className="text-[13px] font-body text-muted">
-          {darkSurround ? "Light surround" : "Dark surround (D)"}
-        </button>
-        <button onClick={goNext} disabled={isLast} className="text-[13px] font-body text-muted disabled:opacity-30">
-          Next →
-        </button>
+        <button onClick={goPrev} disabled={isFirst} className="text-[13px] font-body text-muted disabled:opacity-30">← Previous</button>
+        <button onClick={() => setBlanked((v) => !v)} className="text-[13px] font-body text-muted">{blanked ? "Resume (B)" : "Blank (B)"}</button>
+        <button onClick={() => setDarkSurround((v) => !v)} className="text-[13px] font-body text-muted">{darkSurround ? "Light surround" : "Dark surround (D)"}</button>
+        <button onClick={goNext} disabled={isLast} className="text-[13px] font-body text-muted disabled:opacity-30">Next →</button>
       </div>
     </div>
   );

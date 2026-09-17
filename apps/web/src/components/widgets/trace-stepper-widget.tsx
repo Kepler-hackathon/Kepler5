@@ -6,19 +6,23 @@ import { cn } from "@/lib/cn";
 import { IconButton } from "@/components/ui/button";
 import { SparkGlyph } from "@/components/ui/status-icons";
 import { CitationChip } from "@/components/ui/badges";
-import { TREE_HEIGHT_CODE, TREE_HEIGHT_TRACE } from "@/lib/data/trace-stepper";
+import { TREE_HEIGHT_CODE, TREE_HEIGHT_TRACE, type TraceStep } from "@/lib/data/trace-stepper";
 
 /**
- * The real interactive widget behind the "AI generated" chrome — not the deferred
- * WidgetSlot stub (frontend plan §7.1), since this specific widget (Trace Stepper for
- * recursive tree height) is fully specified in mockup_prompts.md Prompt 3 and is the
- * concrete case this build demos end to end.
+ * The real interactive widget behind the "AI generated" chrome. No backend generation
+ * step produces this widget's `content` shape today (workers/generator/handler.ts only
+ * generates quiz questions) — `code`/`trace` let a caller pass real generated content
+ * once that exists; absent that, this falls back to the original fixed demo trace.
  */
 export function TraceStepperWidget({
+  code = TREE_HEIGHT_CODE,
+  trace = TREE_HEIGHT_TRACE,
   onHelpful,
   publishTrigger,
   published,
 }: {
+  code?: string[];
+  trace?: TraceStep[];
   onHelpful?: (helpful: boolean) => void;
   /** Rendered in place of the default Publish button — typically a PublishDialog trigger. */
   publishTrigger?: React.ReactNode;
@@ -26,9 +30,9 @@ export function TraceStepperWidget({
 }) {
   const [stepIndex, setStepIndex] = React.useState(0);
   const [feedback, setFeedback] = React.useState<"up" | "down" | null>(null);
-  const step = TREE_HEIGHT_TRACE[stepIndex];
+  const step = trace[stepIndex];
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === TREE_HEIGHT_TRACE.length - 1;
+  const isLast = stepIndex === trace.length - 1;
 
   function choose(f: "up" | "down") {
     setFeedback(f);
@@ -63,7 +67,7 @@ export function TraceStepperWidget({
 
       {/* Code panel */}
       <div className="mt-5 overflow-x-auto rounded-[var(--radius-control)] bg-surface-dark-soft p-4 font-code text-[13px] leading-6">
-        {TREE_HEIGHT_CODE.map((line, i) => {
+        {code.map((line, i) => {
           const active = i + 1 === step.highlightLine;
           return (
             <div
@@ -133,12 +137,12 @@ export function TraceStepperWidget({
             <CaretLeft />
           </IconButton>
           <span className="min-w-[5.5rem] text-center text-[13px] text-on-dark-soft font-body">
-            Step {stepIndex + 1} of {TREE_HEIGHT_TRACE.length}
+            Step {stepIndex + 1} of {trace.length}
           </span>
           <IconButton
             label="Step forward"
             disabled={isLast}
-            onClick={() => setStepIndex((i) => Math.min(TREE_HEIGHT_TRACE.length - 1, i + 1))}
+            onClick={() => setStepIndex((i) => Math.min(trace.length - 1, i + 1))}
             className="text-on-dark-soft hover:bg-white/10 hover:text-on-dark disabled:opacity-30"
           >
             <CaretRight />
