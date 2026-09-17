@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { CaretDown, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,18 @@ import { CheckGlyph, TriangleExclamationGlyph, DashGlyph } from "@/components/ui
 import { moduleDetails } from "@/lib/data/curriculum";
 import type { ArenaResult } from "./quiz-arena";
 
-function ResultRow({ result }: { result: ArenaResult }) {
+function ResultRow({
+  result,
+  alreadyLoaded,
+  onLoaded,
+}: {
+  result: ArenaResult;
+  alreadyLoaded: boolean;
+  onLoaded: () => void;
+}) {
   const [expanded, setExpanded] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<"explanation" | "interactive">("explanation");
 
   if (result.status === "correct") {
     return (
@@ -22,9 +32,12 @@ function ResultRow({ result }: { result: ArenaResult }) {
   }
 
   function toggle() {
-    if (!expanded) {
+    if (!expanded && !alreadyLoaded) {
       setLoading(true);
-      window.setTimeout(() => setLoading(false), 450);
+      window.setTimeout(() => {
+        setLoading(false);
+        onLoaded();
+      }, 450);
     }
     setExpanded((v) => !v);
   }
@@ -43,10 +56,36 @@ function ResultRow({ result }: { result: ArenaResult }) {
       </button>
       {expanded ? (
         <div className="mt-3 border-t border-hairline pt-3">
-          {loading ? (
-            <CircleNotch className="size-4 animate-spin text-muted" />
+          <div className="mb-3 flex gap-1 border-b border-hairline pb-2">
+            <button
+              onClick={() => setActiveTab("explanation")}
+              className={cn(
+                "px-3 py-1 text-[12px] font-medium font-body rounded-full transition-colors",
+                activeTab === "explanation" ? "bg-surface-dark text-on-dark" : "text-muted hover:text-ink"
+              )}
+            >
+              Explanation
+            </button>
+            <button
+              onClick={() => setActiveTab("interactive")}
+              className={cn(
+                "px-3 py-1 text-[12px] font-medium font-body rounded-full transition-colors",
+                activeTab === "interactive" ? "bg-surface-dark text-on-dark" : "text-muted hover:text-ink"
+              )}
+            >
+              Interactive
+            </button>
+          </div>
+          {activeTab === "explanation" ? (
+            loading ? (
+              <CircleNotch className="size-4 animate-spin text-muted" />
+            ) : (
+              <p className="text-[13px] leading-relaxed text-body font-body">{result.question.correctExplanation}</p>
+            )
           ) : (
-            <p className="text-[13px] leading-relaxed text-body font-body">{result.question.correctExplanation}</p>
+            <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-3 py-4 text-center">
+              <span className="mx-auto text-[13px] text-muted font-body">Interactive widget available in the lecture&rsquo;s slide viewer.</span>
+            </div>
           )}
         </div>
       ) : null}
@@ -54,7 +93,20 @@ function ResultRow({ result }: { result: ArenaResult }) {
   );
 }
 
-export function QuizResults({ results, onRetakeSame }: { results: ArenaResult[]; onRetakeSame: () => void }) {
+export function QuizResults({
+  results,
+  onRetakeSame,
+  onBackToBuilder,
+}: {
+  results: ArenaResult[];
+  onRetakeSame: () => void;
+  onBackToBuilder?: () => void;
+}) {
+  const [loadedIds, setLoadedIds] = React.useState<Set<string>>(new Set());
+  function markLoaded(id: string) {
+    setLoadedIds((prev) => new Set([...prev, id]));
+  }
+
   const correct = results.filter((r) => r.status === "correct").length;
   const total = results.length;
   const percent = Math.round((correct / total) * 100);
@@ -93,13 +145,26 @@ export function QuizResults({ results, onRetakeSame }: { results: ArenaResult[];
 
       <div className="mt-8 space-y-2 text-left">
         {results.map((r, i) => (
-          <ResultRow key={r.question.id + i} result={r} />
+          <ResultRow
+            key={r.question.id + i}
+            result={r}
+            alreadyLoaded={loadedIds.has(r.question.id)}
+            onLoaded={() => markLoaded(r.question.id)}
+          />
         ))}
       </div>
 
-      <div className="mt-8 flex justify-center gap-3">
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {onBackToBuilder ? (
+          <Button variant="ghost" onClick={onBackToBuilder}>
+            Change topics
+          </Button>
+        ) : null}
         <Button variant="secondary" onClick={onRetakeSame}>
           New quiz, same topics
+        </Button>
+        <Button asChild variant="primary">
+          <Link href="/courses">Back to courses</Link>
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { IconButton } from "@/components/ui/button";
 
 export function TopBar({
   courseId,
+  moduleId,
   lectureNumber,
   lectureTitle,
   moduleTitle,
@@ -14,6 +15,7 @@ export function TopBar({
   onPresent,
 }: {
   courseId: string;
+  moduleId: string;
   lectureNumber: number;
   lectureTitle: string;
   moduleTitle: string;
@@ -26,8 +28,8 @@ export function TopBar({
   return (
     <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-hairline bg-canvas px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <IconButton label="Back to course landing" asChild>
-          <Link href={`/course/${courseId}`}>
+        <IconButton label="Back to module" asChild>
+          <Link href={`/course/${courseId}/module/${moduleId}`}>
             <CaretLeft />
           </Link>
         </IconButton>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Books } from "@phosphor-icons/react";
+import { cn } from "@/lib/cn";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusIndicator } from "@/components/ui/status-indicator";
@@ -13,8 +14,15 @@ function statusFor(m: Module) {
   return { kind: "in-progress" as const, label: `In progress`, percent };
 }
 
-export function ModuleCard({ module: m, courseId }: { module: Module; courseId: string }) {
+export function ModuleCard({ module: m, courseId, role = "student" }: { module: Module; courseId: string; role?: "student" | "teacher" }) {
   const status = statusFor(m);
+
+  const teacherState =
+    m.completedLectures === m.totalLectures
+      ? "Published"
+      : m.completedLectures > 0 || m.inProgressLectureNumber
+        ? "Ready to review"
+        : "Draft";
 
   return (
     <Card className="flex flex-col p-6">
@@ -45,11 +53,29 @@ export function ModuleCard({ module: m, courseId }: { module: Module; courseId: 
         </span>
       ) : null}
 
-      <div className="mt-5">
-        <Button asChild variant="primary" className="w-full">
-          <Link href={`/course/${courseId}/module/${m.id}`}>Open Module</Link>
-        </Button>
-      </div>
+      {role === "teacher" ? (
+        <div className="mt-5 flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "rounded-full border px-2.5 py-0.5 text-[12px] font-medium font-body",
+              teacherState === "Published" && "border-success/30 bg-success/10 text-success",
+              teacherState === "Ready to review" && "border-[#bb5a3a]/30 bg-[#bb5a3a]/10 text-[#bb5a3a]",
+              teacherState === "Draft" && "border-hairline bg-canvas text-muted"
+            )}
+          >
+            {teacherState}
+          </span>
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/course/${courseId}/module/${m.id}`}>Review</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-5">
+          <Button asChild variant="primary" className="w-full">
+            <Link href={`/course/${courseId}/module/${m.id}`}>Open Module</Link>
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

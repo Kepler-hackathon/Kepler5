@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X } from "@phosphor-icons/react";
 import { course } from "@/lib/data/lecture-8";
@@ -54,6 +55,26 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [fullscreen, setFullscreen] = React.useState(false);
   const [presenting, setPresenting] = React.useState(false);
+  const [mounting, setMounting] = React.useState(true);
+  const [isOnline, setIsOnline] = React.useState(true);
+  const [explanationPending, setExplanationPending] = React.useState(false);
+
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setMounting(false), 200);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  React.useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const setOnline = () => setIsOnline(true);
+    const setOffline = () => setIsOnline(false);
+    window.addEventListener("online", setOnline);
+    window.addEventListener("offline", setOffline);
+    return () => {
+      window.removeEventListener("online", setOnline);
+      window.removeEventListener("offline", setOffline);
+    };
+  }, []);
 
   const stop = stops[stopIndex];
 
@@ -107,6 +128,24 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goNext, goPrev, goTo, stops.length]);
 
+  if (mounting) {
+    return (
+      <div className="flex h-screen flex-col bg-canvas">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-hairline px-6">
+          <div className="size-8 animate-pulse rounded bg-hairline/70" />
+          <div className="space-y-1.5">
+            <div className="h-3 w-48 animate-pulse rounded bg-hairline/70" />
+            <div className="h-3 w-32 animate-pulse rounded bg-hairline/70" />
+          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-center p-6">
+          <div className="aspect-[16/9] w-full max-w-3xl animate-pulse rounded-[var(--radius-card)] bg-hairline/70" />
+        </div>
+        <div className="h-16 border-t border-hairline" />
+      </div>
+    );
+  }
+
   function handleAnswer(questionId: string, answer: QuizAnswer, slideLabel: string) {
     setQuizAnswers((prev) => ({ ...prev, [questionId]: answer }));
     if (!answer.correct) {
@@ -117,8 +156,14 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
+      {!isOnline ? (
+        <div className="flex items-center justify-center gap-2 bg-warning-fill/20 px-4 py-1.5 text-[12px] text-warning-text font-body">
+          <span>You&rsquo;re offline — loaded slides still work, but AI features are unavailable.</span>
+        </div>
+      ) : null}
       <TopBar
         courseId={lecture.courseId}
+        moduleId={lecture.moduleId}
         lectureNumber={lecture.number}
         lectureTitle={lecture.title}
         moduleTitle={`${course.code} · ${lecture.moduleTitle}`}
@@ -153,6 +198,7 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
                   setDrawerSlideLabel(`Slide ${stop.interstitial.afterSlide}`);
                   setDrawerOpen(true);
                 }}
+                explanationLoading={explanationPending}
               />
             ) : (
               <div className="mx-auto flex h-full max-w-lg flex-col items-center justify-center gap-4 text-center">
@@ -161,14 +207,14 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
                   You&rsquo;ve reached the end of Lecture {lecture.number} · {lecture.title}.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
-                  <Button variant="secondary" onClick={() => alert("Not available in this preview.")}>
-                    Back to module
+                  <Button asChild variant="secondary">
+                    <Link href={`/course/${lecture.courseId}/module/${lecture.moduleId}`}>Back to module</Link>
                   </Button>
-                  <Button variant="secondary" onClick={() => alert("Not available in this preview.")}>
-                    Build a quiz from this lecture
+                  <Button asChild variant="secondary">
+                    <Link href={`/quizzes?lectures=${lecture.number}`}>Build a quiz from this lecture</Link>
                   </Button>
-                  <Button variant="primary" onClick={() => alert("Not available in this preview.")}>
-                    Next lecture
+                  <Button asChild variant="primary">
+                    <Link href={`/course/${lecture.courseId}/module/${lecture.moduleId}`}>Next lecture</Link>
                   </Button>
                 </div>
               </div>
@@ -204,7 +250,7 @@ export function SlideViewer({ lecture, initialSlide }: { lecture: Lecture; initi
         </div>
       </div>
 
-      <RemediationDrawer open={drawerOpen} onOpenChange={setDrawerOpen} slideLabel={drawerSlideLabel} />
+      <RemediationDrawer open={drawerOpen} onOpenChange={setDrawerOpen} slideLabel={drawerSlideLabel} onLoadingChange={setExplanationPending} />
 
       {presenting ? (
         <PresenterMode

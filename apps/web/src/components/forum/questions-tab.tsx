@@ -11,14 +11,15 @@ import { forumThreads, type ForumThread } from "@/lib/data/forum";
 
 type Filter = "all" | "unanswered" | "endorsed";
 
-export function QuestionsTab() {
+export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
   const [filter, setFilter] = React.useState<Filter>("all");
   const [includeLogistics, setIncludeLogistics] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [upvoted, setUpvoted] = React.useState<Set<string>>(new Set());
   const [openThread, setOpenThread] = React.useState<ForumThread | null>(null);
+  const [extraThreads, setExtraThreads] = React.useState<ForumThread[]>([]);
 
-  const filtered = forumThreads
+  const filtered = [...extraThreads, ...forumThreads]
     .filter((t) => includeLogistics || !t.isLogistics)
     .filter((t) => (filter === "unanswered" ? t.replyCount === 0 : filter === "endorsed" ? t.endorsed : true))
     .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
@@ -65,7 +66,27 @@ export function QuestionsTab() {
             Include logistics
           </label>
         </div>
-        <ForumComposeDialog onPost={() => {}} />
+        <ForumComposeDialog
+          onPost={(title) => {
+            setExtraThreads((prev) => [
+              {
+                id: `local-${Date.now()}`,
+                title,
+                author: "You",
+                timeAgo: "just now",
+                endorsed: false,
+                replyCount: 0,
+                upvotes: 0,
+                scope: "lecture" as const,
+                moduleNumber: 1,
+                isLogistics: false,
+                body: "",
+              },
+              ...prev,
+            ]);
+            onPost?.(title);
+          }}
+        />
       </div>
 
       <div className="relative mt-4">

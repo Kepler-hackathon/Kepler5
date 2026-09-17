@@ -23,6 +23,7 @@ export function PresenterMode({
   const initialIndex = Math.max(0, lecture.slides.findIndex((s) => s.number === initialSlideNumber));
   const [index, setIndex] = React.useState(initialIndex);
   const [blanked, setBlanked] = React.useState(false);
+  const [darkSurround, setDarkSurround] = React.useState(false);
   const [notesOpen, setNotesOpen] = React.useState(false);
   const [chromeVisible, setChromeVisible] = React.useState(true);
   const hideTimer = React.useRef<number | undefined>(undefined);
@@ -45,15 +46,16 @@ export function PresenterMode({
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+      if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !e.shiftKey)) {
         e.preventDefault();
         goNext();
-      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp" || (e.key === " " && e.shiftKey)) {
         e.preventDefault();
         goPrev();
       } else if (e.key === "Home") setIndex(0);
       else if (e.key === "End") setIndex(lecture.slides.length - 1);
       else if (e.key.toLowerCase() === "b") setBlanked((v) => !v);
+      else if (e.key.toLowerCase() === "d") setDarkSurround((v) => !v);
       else if (e.key.toLowerCase() === "q") onExit(slide.number);
       else if (e.key === "Escape") onExit(slide.number);
     }
@@ -88,6 +90,13 @@ export function PresenterMode({
             </button>
           ) : null}
           <button
+            onClick={() => setDarkSurround((v) => !v)}
+            className="flex items-center gap-1 text-[13px] font-medium font-body text-muted hover:text-ink"
+            title="Toggle dark surround for projectors (D)"
+          >
+            {darkSurround ? "Light surround" : "Dark surround"}
+          </button>
+          <button
             onClick={() => onExit(slide.number)}
             className="flex items-center gap-1.5 text-[13px] font-medium font-body text-muted hover:text-ink"
           >
@@ -96,13 +105,15 @@ export function PresenterMode({
         </div>
       </div>
 
-      <div className="relative flex-1 overflow-hidden">
+      <div className={cn("relative flex-1 overflow-hidden", darkSurround && !blanked && "bg-surface-dark")}>
         {blanked ? (
           <div className="flex h-full items-center justify-center bg-surface-dark">
             <p className="text-[13px] text-on-dark-soft font-body">Screen blanked · press B to resume</p>
           </div>
         ) : (
-          <SlideStage slide={slide} />
+          <div className={cn(darkSurround && "flex h-full items-center justify-center p-8")}>
+            <SlideStage slide={slide} />
+          </div>
         )}
       </div>
 
@@ -115,7 +126,7 @@ export function PresenterMode({
 
       <div
         className={cn(
-          "flex h-12 shrink-0 items-center justify-center gap-4 border-t border-hairline bg-canvas transition-opacity duration-200",
+          "flex h-12 shrink-0 items-center justify-center gap-6 border-t border-hairline bg-canvas transition-opacity duration-200",
           !chromeVisible && "pointer-events-none opacity-0"
         )}
       >
@@ -124,6 +135,9 @@ export function PresenterMode({
         </button>
         <button onClick={() => setBlanked((v) => !v)} className="text-[13px] font-body text-muted">
           {blanked ? "Resume (B)" : "Blank (B)"}
+        </button>
+        <button onClick={() => setDarkSurround((v) => !v)} className="text-[13px] font-body text-muted">
+          {darkSurround ? "Light surround" : "Dark surround (D)"}
         </button>
         <button onClick={goNext} disabled={isLast} className="text-[13px] font-body text-muted disabled:opacity-30">
           Next →

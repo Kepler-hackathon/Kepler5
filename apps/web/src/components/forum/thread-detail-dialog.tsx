@@ -6,11 +6,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import type { ForumThread } from "@/lib/data/forum";
 
 /** Thread detail (frontend plan S2, D5 — gap in spec, resolved as a panel over the feed). */
 export function ThreadDetailDialog({ thread, open, onOpenChange }: { thread: ForumThread | null; open: boolean; onOpenChange: (open: boolean) => void }) {
   const [reply, setReply] = React.useState("");
+  const toast = useToast();
   if (!thread) return null;
 
   return (
@@ -44,7 +46,15 @@ export function ThreadDetailDialog({ thread, open, onOpenChange }: { thread: For
             placeholder="Write a reply…"
           />
           <div className="mt-2 flex justify-end">
-            <Button variant="primary" size="sm" disabled={!reply.trim()} onClick={() => setReply("")}>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!reply.trim()}
+              onClick={() => {
+                setReply("");
+                toast.push({ message: "Reply posted" });
+              }}
+            >
               Reply
             </Button>
           </div>

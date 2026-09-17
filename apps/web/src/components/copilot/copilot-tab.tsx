@@ -73,7 +73,7 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
     const text = draft.trim();
     if (!text || streamingMessage) return;
     pushUser(text);
-    const answer = answerFor(text);
+    const answer = answerFor(text, scope);
     setStreamingMessage({ id: nextId(), role: "assistant", text: answer.text, citation: answer.citation, grounded: answer.grounded });
     setDraft("");
   }
@@ -90,15 +90,31 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
       });
       return;
     }
-    const answer = answerFor(chip);
-    setStreamingMessage({
-      id: nextId(),
-      role: "assistant",
-      text: answer.text,
-      citation: answer.citation,
-      grounded: answer.grounded,
-      showDiagram: chip === "Show me visually",
-    });
+    const answer = answerFor(chip, scope);
+    if (chip === "Show me visually") {
+      setStreamingMessage({
+        id: nextId(),
+        role: "assistant",
+        text: answer.text,
+        citation: answer.citation,
+        grounded: answer.grounded,
+        widget: {
+          typeBadge: "trace-stepper",
+          title: "Tree Height — Call Stack Walkthrough",
+          explanation:
+            "Step through the recursive treeHeight calls, watching each frame push and pop as the answer bubbles up from the leaves.",
+          state: "ready" as const,
+        },
+      });
+    } else {
+      setStreamingMessage({
+        id: nextId(),
+        role: "assistant",
+        text: answer.text,
+        citation: answer.citation,
+        grounded: answer.grounded,
+      });
+    }
   }
 
   const isEmpty = messages.length === 0 && !streamingMessage;
@@ -187,7 +203,7 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
               }
             }}
             rows={1}
-            placeholder="Ask about Slide 14…"
+            placeholder={scope === "slide" ? `Ask about Slide ${slideNumber}…` : `Ask about Lecture ${lectureNumber}…`}
             className="max-h-32 flex-1 resize-none border-0 p-0 focus:border-0"
           />
           {streamingMessage ? (
@@ -207,7 +223,9 @@ export function CopilotTab({ slideNumber, lectureNumber }: { slideNumber: number
         </div>
         <div className="mt-1 flex items-center justify-between px-1">
           <p className="text-[12px] text-muted font-body">
-            {streamingMessage ? "Waiting for the response to finish loading…" : "Enter to send · Shift+Enter for a new line"}
+            {streamingMessage
+            ? "Waiting for the response to finish loading…"
+            : `Scope: ${scope === "slide" ? `Slide ${slideNumber}` : `Lecture ${lectureNumber}`} · Enter to send`}
           </p>
           {draft.length > CHAR_LIMIT - 200 ? (
             <p className="text-[12px] text-muted font-body">{draft.length}/{CHAR_LIMIT}</p>
