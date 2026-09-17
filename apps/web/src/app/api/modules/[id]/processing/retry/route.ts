@@ -98,6 +98,10 @@ export async function POST(
     runId,
     moduleId: id,
     lectureIds: targetLectures.map((l) => l.id),
+    // targetLectures above is already the definitive, correctly-filtered set (it accounts for
+    // body.force itself) — force:true here tells generator's startRun() not to re-filter by
+    // lectures.parse_status and silently drop lectures we've already decided to reprocess.
+    force: true,
   })
 
   return NextResponse.json({ runId, status: 'running' }, { status: 202 })
