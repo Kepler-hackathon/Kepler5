@@ -1,5 +1,6 @@
 import type { Context, SQSEvent, SQSHandler } from 'aws-lambda';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { generateObject, generateText } from 'ai';
 import postgres from 'postgres';
@@ -28,8 +29,20 @@ async function getSql(): Promise<postgres.Sql> {
 
 // ─── Bedrock ─────────────────────────────────────────────────────────────────
 
+// @ai-sdk/amazon-bedrock only resolves credentials from an explicit `credentialProvider`, or
+// the plain AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN env vars — unlike a raw
+// @aws-sdk/client-* (e.g. the S3 client used elsewhere in this app), it never falls back to
+// ~/.aws/credentials, SSO, or IMDS. In a deployed Lambda that's moot (the runtime injects
+// those exact env vars for the execution role), but in local dev — where ambient AWS auth
+// comes from ~/.aws/credentials, not env vars — every Bedrock call failed with "AWS access key
+// ID setting is missing" even though S3 calls in the same process worked fine. Using the full
+// Node provider chain here fixes local dev and is a strict superset in Lambda (env vars are
+// still checked first).
 function getBedrock() {
-  return createAmazonBedrock({ region: process.env.AWS_REGION ?? 'us-east-1' });
+  return createAmazonBedrock({
+    region: process.env.AWS_REGION ?? 'us-east-1',
+    credentialProvider: defaultProvider(),
+  });
 }
 
 function mainModel() {
