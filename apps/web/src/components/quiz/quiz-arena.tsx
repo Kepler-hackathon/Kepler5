@@ -27,15 +27,21 @@ export interface ArenaResult {
 export function QuizArena({
   sessionId,
   questions,
+  initialIndex = 0,
   onFinish,
   onExit,
 }: {
   sessionId: string;
   questions: SessionQuestion[];
+  /** Resume point from the session's server-side currentIndex — the arena otherwise always
+   * starts at 0, which desyncs from the server the moment a partially-answered session is
+   * reopened (double-click dedup, "resume saved session"), causing every subsequent answer
+   * submission to fail with a 409 questionId-mismatch. */
+  initialIndex?: number;
   onFinish: (results: ArenaResult[]) => void;
   onExit?: () => void;
 }) {
-  const [index, setIndex] = React.useState(0);
+  const [index, setIndex] = React.useState(initialIndex);
   const [selected, setSelected] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState<{ correctKey: string; explanation: string | null } | null>(null);
   const [submitting, setSubmitting] = React.useState(false);

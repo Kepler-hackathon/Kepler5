@@ -19,7 +19,7 @@ interface SessionRow {
 type Stage =
   | { kind: "builder" }
   | { kind: "generating"; sessionId: string; lectureIds: string[] }
-  | { kind: "arena"; sessionId: string; questions: SessionQuestion[]; lectureIds: string[]; attempt: number }
+  | { kind: "arena"; sessionId: string; questions: SessionQuestion[]; lectureIds: string[]; attempt: number; currentIndex: number }
   | {
       kind: "results";
       lectureIds: string[];
@@ -68,7 +68,7 @@ export function PracticeQuiz({ initialSelected }: { initialSelected?: string[] }
           setStage({ kind: "error", message: "No questions were generated for the selected lectures." });
           return;
         }
-        setStage({ kind: "arena", sessionId, questions, lectureIds, attempt });
+        setStage({ kind: "arena", sessionId, questions, lectureIds, attempt, currentIndex: session.currentIndex });
         return;
       }
       if (session.status === "failed" || session.status === "cancelled") {
@@ -114,6 +114,7 @@ export function PracticeQuiz({ initialSelected }: { initialSelected?: string[] }
             key={stage.attempt}
             sessionId={stage.sessionId}
             questions={stage.questions}
+            initialIndex={stage.currentIndex}
             onFinish={(results) => finishArena(stage.sessionId, stage.lectureIds, stage.attempt, results)}
             onExit={() => setStage({ kind: "builder" })}
           />
