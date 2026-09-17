@@ -70,7 +70,7 @@ export async function POST(
         .where(
           and(
             eq(generatedItems.lectureId, lecture.id),
-            eq(generatedItems.status, 'approved'),
+            inArray(generatedItems.status, ['approved', 'published']),
           ),
         )
         .orderBy(asc(generatedItems.createdAt))

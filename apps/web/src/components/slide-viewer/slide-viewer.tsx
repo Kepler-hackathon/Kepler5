@@ -139,6 +139,17 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
   }, [lectureId, initialSlide]);
 
   const stops = React.useMemo(() => (bundle ? buildStops(bundle.slides, bundle.items) : []), [bundle]);
+  const interstitialSlideNumbers = React.useMemo(() => {
+    if (!bundle) return [];
+    const slideById = new Map(bundle.slides.map(s => [s.id, s]));
+    return bundle.items
+      .filter(item => item.kind === 'quiz' && item.afterSlideId)
+      .map(item => {
+        const slide = slideById.get(item.afterSlideId);
+        return slide ? (slide.index ?? 0) + 1 : null;
+      })
+      .filter((n): n is number => n !== null);
+  }, [bundle]);
   const targetSlide = initialSlide ?? resumeSlide ?? 1;
 
   React.useEffect(() => {
@@ -328,7 +339,7 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
           <Scrubber
             currentSlide={currentSlideNumber}
             totalSlides={Math.max(1, totalSlides)}
-            interstitialAfterSlides={[]}
+            interstitialAfterSlides={interstitialSlideNumbers}
             onSeek={seekToSlide}
             onPrev={goPrev}
             onNext={goNext}

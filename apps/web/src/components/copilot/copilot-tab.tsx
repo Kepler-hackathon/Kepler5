@@ -85,7 +85,7 @@ function CopilotThread({
   slideNumber: number;
   lectureNumber: number;
 }) {
-  const { messages, input, setInput, handleSubmit, isLoading, stop, append } = useChat({
+  const { messages, input, setInput, handleSubmit, isLoading, stop, append, error } = useChat({
     id: threadId,
     api: `/api/chat/threads/${threadId}/messages`,
     headers,
@@ -144,13 +144,20 @@ function CopilotThread({
             </div>
           </div>
         ) : (
-          messages.map((m) => (
-            <ChatMessageView
-              key={m.id}
-              message={asMessageData(m)}
-              isStreaming={isLoading && m.id === messages[messages.length - 1]?.id && m.role === "assistant"}
-            />
-          ))
+          <>
+            {messages.map((m) => (
+              <ChatMessageView
+                key={m.id}
+                message={asMessageData(m)}
+                isStreaming={isLoading && m.id === messages[messages.length - 1]?.id && m.role === "assistant"}
+              />
+            ))}
+            {error && (
+              <p className="rounded-lg bg-error/10 px-3 py-2 text-[13px] font-body text-error">
+                {error.message || "Failed to get a response. Please try again."}
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -192,8 +199,17 @@ function CopilotThread({
           )}
         </form>
         <div className="mt-1 flex items-center justify-between px-1">
-          <p className="text-[12px] text-muted font-body">
-            {isLoading ? "Waiting for the response to finish loading…" : `Scope: ${scope === "slide" ? `Slide ${slideNumber}` : `Lecture ${lectureNumber}`} · Enter to send`}
+          <p className="flex items-center gap-1.5 text-[12px] text-muted font-body">
+            {isLoading ? (
+              <>
+                <span className="inline-flex gap-0.5">
+                  <span className="size-1 rounded-full bg-muted animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="size-1 rounded-full bg-muted animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="size-1 rounded-full bg-muted animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+                Generating response…
+              </>
+            ) : `Scope: ${scope === "slide" ? `Slide ${slideNumber}` : `Lecture ${lectureNumber}`} · Enter to send`}
           </p>
           {input.length > CHAR_LIMIT - 200 ? (
             <p className="text-[12px] text-muted font-body">{input.length}/{CHAR_LIMIT}</p>

@@ -73,7 +73,15 @@ export function TopBar({
       )}
 
       {/* Right: icon buttons */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Glowing green "Watching" live indicator */}
+        <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-[11px] font-semibold font-body text-success-text">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" style={{ animationDuration: "1.8s" }} />
+            <span className="relative size-1.5 rounded-full bg-success" />
+          </span>
+          Watching
+        </span>
         <IconButton label="Present" onClick={onPresent}>
           <Presentation />
         </IconButton>

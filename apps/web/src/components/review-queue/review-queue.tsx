@@ -420,7 +420,16 @@ function WidgetWorkbench({
                   </div>
                 </div>
                 <div className="rounded-[var(--radius-card)] bg-surface-dark p-6">
-                  <TraceStepperWidget />
+                  {Array.isArray(selected.content.code) && selected.content.trace ? (
+                    <TraceStepperWidget
+                      code={selected.content.code as string[]}
+                      trace={selected.content.trace as Parameters<typeof TraceStepperWidget>[0]["trace"]}
+                    />
+                  ) : (
+                    <p className="rounded-lg bg-surface-soft p-4 text-[13px] font-body text-muted whitespace-pre-wrap leading-relaxed">
+                      {widgetExplanation(selected.content)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -634,8 +643,16 @@ export function ReviewQueue({ courseId }: { courseId: string }) {
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-canvas rounded-full text-[11px] font-body text-muted border border-hairline">
             <span className="size-2 rounded-full bg-success animate-pulse" />
-            Review Policy: Automated code-safety verified
+            Automated code-safety verified
           </div>
+          {/* Glowing red/amber "Reviewing" indicator */}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-error/30 bg-error/10 px-2.5 py-1 text-[11px] font-semibold font-body text-error">
+            <span className="relative flex size-1.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-error opacity-60" style={{ animationDuration: "1.6s" }} />
+              <span className="relative size-1.5 rounded-full bg-error" />
+            </span>
+            Reviewing
+          </span>
           <div className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-dark text-on-dark rounded-[var(--radius-control)] text-[11px] font-body font-semibold">
             <SealCheck className="size-3.5 text-[var(--color-primary-fixed)]" weight="fill" />
             Faculty Approval Mode

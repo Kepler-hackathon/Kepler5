@@ -128,6 +128,24 @@ export function Stage3Processing({
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-10 text-center">
+      {/* Animated orbital spinner */}
+      <div className="relative flex size-20 items-center justify-center">
+        {/* Outer slow ring */}
+        <svg viewBox="0 0 80 80" className="absolute inset-0 size-20 animate-spin" style={{ animationDuration: "3s" }} aria-hidden>
+          <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="2" strokeOpacity="0.12" fill="none" />
+          <path d="M40 4a36 36 0 0 1 25.46 10.54" stroke="#cc785c" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        </svg>
+        {/* Inner fast ring */}
+        <svg viewBox="0 0 80 80" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-14 animate-spin" style={{ animationDuration: "1.1s", animationDirection: "reverse" }} aria-hidden>
+          <circle cx="40" cy="40" r="30" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.1" fill="none" />
+          <path d="M40 10a30 30 0 0 1 21.21 8.79" stroke="#cc785c" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity="0.6" />
+        </svg>
+        {/* Center pulsing orb */}
+        <span className="relative flex size-8 items-center justify-center rounded-full bg-button-primary/20">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-button-primary/30" style={{ animationDuration: "1.4s" }} />
+          <span className="relative size-3.5 rounded-full bg-button-primary" />
+        </span>
+      </div>
       <h2 className="text-[22px]">Processing module…</h2>
 
       <div className="w-full space-y-3 text-left">

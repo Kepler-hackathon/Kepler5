@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, practiceSessions, practiceAnswers, quizQuestions } from '@kepler/db'
+import { db, practiceSessions, practiceAnswers, quizQuestions, learningEvents } from '@kepler/db'
 import { eq, and } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
@@ -71,6 +71,23 @@ export async function POST(
     .update(practiceSessions)
     .set({ currentIndex: session.currentIndex + 1 })
     .where(eq(practiceSessions.id, id))
+
+  // Mirror the answer into learningEvents so teacher analytics can see it
+  if (question.lectureId) {
+    const event: {
+      userId: string; type: 'quiz_answer'; lectureId: string;
+      questionId: string; optionKey: string; isCorrect: boolean; slideId?: string;
+    } = {
+      userId: identity.userId,
+      type: 'quiz_answer',
+      lectureId: question.lectureId,
+      questionId,
+      optionKey: selectedKey,
+      isCorrect,
+    }
+    if (question.sourceSlideId) event.slideId = question.sourceSlideId
+    await db.insert(learningEvents).values(event)
+  }
 
   return NextResponse.json({
     isCorrect,

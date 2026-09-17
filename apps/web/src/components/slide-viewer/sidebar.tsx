@@ -1,3 +1,7 @@
+"use client";
+
+import * as React from "react";
+import { cn } from "@/lib/cn";
 import { FaqTab } from "./faq-tab";
 import { CopilotTab } from "@/components/copilot/copilot-tab";
 
@@ -14,34 +18,55 @@ export function Sidebar({
   lectureId: string;
   slideId: string | null;
 }) {
+  const [tab, setTab] = React.useState<"faq" | "ai">("faq");
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
+      {/* Tab switcher */}
+      <div className="flex shrink-0 border-b border-hairline">
+        <button
+          type="button"
+          onClick={() => setTab("faq")}
+          className={cn(
+            "flex-1 py-2.5 text-[12px] font-semibold font-body uppercase tracking-[0.5px] transition-colors",
+            tab === "faq"
+              ? "text-ink border-b-2 border-button-primary"
+              : "text-muted hover:text-ink"
+          )}
+        >
+          Slide FAQ
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("ai")}
+          className={cn(
+            "flex-1 py-2.5 text-[12px] font-semibold font-body uppercase tracking-[0.5px] transition-colors",
+            tab === "ai"
+              ? "text-ink border-b-2 border-button-primary"
+              : "text-muted hover:text-ink"
+          )}
+        >
+          AI Tutor
+        </button>
+      </div>
+
       <div className="flex-1 overflow-y-auto">
-        {/* FAQ section */}
-        <FaqTab
-          moduleId={moduleId}
-          lectureId={lectureId}
-          slideId={slideId}
-          slideNumber={slideNumber}
-          lectureNumber={lectureNumber}
-        />
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="h-px flex-1 bg-hairline" />
-          <span className="rounded-full border border-hairline bg-surface-card px-2 py-0.5 text-[10px] font-semibold font-body uppercase tracking-wider text-muted">
-            AI Tutor
-          </span>
-          <div className="h-px flex-1 bg-hairline" />
-        </div>
-
-        {/* AI section */}
-        <CopilotTab
-          lectureId={lectureId}
-          slideId={slideId ?? undefined}
-          slideNumber={slideNumber}
-          lectureNumber={lectureNumber}
-        />
+        {tab === "faq" ? (
+          <FaqTab
+            moduleId={moduleId}
+            lectureId={lectureId}
+            slideId={slideId}
+            slideNumber={slideNumber}
+            lectureNumber={lectureNumber}
+          />
+        ) : (
+          <CopilotTab
+            lectureId={lectureId}
+            slideId={slideId ?? undefined}
+            slideNumber={slideNumber}
+            lectureNumber={lectureNumber}
+          />
+        )}
       </div>
     </div>
   );

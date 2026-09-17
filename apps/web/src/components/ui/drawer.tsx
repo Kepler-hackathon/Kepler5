@@ -45,7 +45,7 @@ export function DrawerContent({
             <X className="size-5" />
           </RadixDialog.Close>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-6 py-5 overflow-x-hidden">{children}</div>
       </RadixDialog.Content>
     </RadixDialog.Portal>
   );

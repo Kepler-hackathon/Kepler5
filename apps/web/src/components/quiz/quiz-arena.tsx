@@ -174,7 +174,7 @@ export function QuizArena({
               onClick={() => setSelected(option.key)}
               className={cn(
                 "flex w-full items-center gap-3 rounded-[var(--radius-control)] border bg-surface-card px-4 py-3 text-left text-[15px] font-body transition-colors",
-                !submitted && isSelected && "border-button-primary",
+                !submitted && isSelected && "border-button-primary bg-button-primary/8",
                 !submitted && !isSelected && "border-hairline hover:border-body",
                 submitted && isCorrectOption && "border-success bg-success/10",
                 submitted && isSelected && !isCorrectOption && "border-error bg-error/10",

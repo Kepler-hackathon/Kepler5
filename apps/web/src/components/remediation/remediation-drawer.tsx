@@ -201,36 +201,9 @@ export function RemediationDrawer({
       </div>
     );
   } else {
-    // Defensive fallback: cycle through widget types based on slide number.
-    const widgetContent = widgetVariant === 1 ? (
-      <ConceptSliderWidget {...DEMO_SLIDER} />
-    ) : widgetVariant === 2 ? (
-      <PredictCheckWidget {...DEMO_PREDICT} />
-    ) : (
-      <TraceStepperWidget published={published} publishTrigger={publishTrigger} />
-    );
     content = (
-      <div className="space-y-4">
-        {widgetContent}
-        <div className="flex items-center gap-3 border-t border-hairline pt-4">
-          <span className="text-[13px] font-body text-muted">Helpful?</span>
-          <button
-            type="button"
-            aria-pressed={feedback === "up"}
-            onClick={() => setFeedback(feedback === "up" ? null : "up")}
-            className={cn("rounded-full p-1.5 transition-colors", feedback === "up" ? "text-success" : "text-muted hover:text-ink")}
-          >
-            <ThumbsUp className="size-4" />
-          </button>
-          <button
-            type="button"
-            aria-pressed={feedback === "down"}
-            onClick={() => setFeedback(feedback === "down" ? null : "down")}
-            className={cn("rounded-full p-1.5 transition-colors", feedback === "down" ? "text-error" : "text-muted hover:text-ink")}
-          >
-            <ThumbsDown className="size-4" />
-          </button>
-        </div>
+      <div className="py-8 text-center">
+        <p className="text-[15px] text-body font-body">Answer a quiz question incorrectly to see an interactive explanation here.</p>
       </div>
     );
   }

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary-fixed-variant":"#49473f","tertiary-fixed":"#ffdbd0","surface-container-highest":"#e5e2e0","surface-container-low":"#f6f3f1","surface-container":"#f0edeb","surface-container-high":"#ebe8e5","on-background":"#1c1c1a","on-secondary-container":"#68645b","on-error":"#ffffff","on-primary-fixed-variant":"#75331c","on-tertiary-container":"#fffbff","primary-fixed-dim":"#ffb59d","primary-container":"#ad5f45","outline-variant":"#dac1ba","surface":"#fcf9f6","on-error-container":"#93000a","error":"#ba1a1a","on-tertiary-fixed":"#3a0b00","on-tertiary":"#ffffff","on-primary-fixed":"#390c00","on-tertiary-fixed-variant":"#76321c","primary-fixed":"#ffdbd0","inverse-on-surface":"#f3f0ee","inverse-primary":"#ffb59d","surface-tint":"#924a31","tertiary-fixed-dim":"#ffb59e","secondary-fixed-dim":"#cbc6bb","surface-variant":"#e5e2e0","outline":"#87736d","surface-container-lowest":"#ffffff","error-container":"#ffdad6","surface-dim":"#dcd9d7","on-primary-container":"#fffbff","primary":"#8f482f","on-surface-variant":"#54433e","secondary":"#615e56","on-primary":"#ffffff","secondary-container":"#e8e2d7","surface-bright":"#fcf9f6","secondary-fixed":"#e8e2d7","inverse-surface":"#31302f","on-secondary":"#ffffff","tertiary":"#91462f","on-surface":"#1c1c1a","on-secondary-fixed":"#1d1b15","background":"#fcf9f6","tertiary-container":"#af5e45"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-md":"1rem","space-lg":"1.5rem","margin":"2rem","space-xl":"2.5rem","space-xs":"0.25rem","gutter":"1.5rem","space-sm":"0.5rem"},"fontFamily":{"headline-xl":["EB Garamond"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"headline-lg":["EB Garamond"],"label-md":["Inter"],"body-lg":["Inter"],"body-md":["Inter"],"headline-xl-mobile":["EB Garamond"],"headline-lg-mobile":["EB Garamond"],"headline-md":["EB Garamond"],"headline-sm":["EB Garamond"],"label-sm":["Inter"]},"fontSize":{"headline-xl":["48px",{"lineHeight":"56px","letterSpacing":"-0.015em","fontWeight":"500"}],"body-sm":["13px",{"lineHeight":"20px","fontWeight":"400"}],"code-sm":["13px",{"lineHeight":"20px","fontWeight":"400"}],"headline-lg":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"500"}],"label-md":["13px",{"lineHeight":"18px","letterSpacing":"0.02em","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"30px","fontWeight":"400"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"headline-xl-mobile":["34px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"500"}],"headline-lg-mobile":["28px",{"lineHeight":"34px","letterSpacing":"0em","fontWeight":"500"}],"headline-md":["26px",{"lineHeight":"32px","fontWeight":"600"}],"headline-sm":["20px",{"lineHeight":"26px","fontWeight":"600"}],"label-sm":["11px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><a class="flex items-center gap-space-sm" href="#"><img alt="KeplerLearn Radial Asterisk Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wv0M9oDAeZcpxC9wR4g8VuUx-S4KvH1UamzzyfgEuygEJVugTX7E8Kdz3HgLbJzeBWn0jPe8PpFEPBLDgsmgQ0QgROQvew58gHy6PuU6vcZVErS6jiJOq8EvLdzrg8aNhUf88VuJlX_3Ss6qbOlUG7CSWtLMoifKgr0wTpCvbFYYZoWDq8F0Q_-GEFeFUu1-k3uGTl_UiwxqsDAaSwGOw8lv_UOeMNZ_LD3XKcso7mHgpSwknEt65PMg"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">KeplerLearn</span></a><div class="h-4 w-px bg-outline-variant/60 mx-space-xs hidden sm:block"></div><button class="hidden sm:inline-flex items-center gap-space-xs bg-surface-container-low hover:bg-surface-container text-on-surface hover:text-on-surface px-space-md py-1.5 rounded-full font-label-md text-label-md transition-colors" type="button"><span class="truncate max-w-[200px]">CS 106B: Programming Abstractions</span><span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span></button></div><nav class="hidden lg:flex items-center gap-1 bg-surface-container-low/60 p-1 rounded-full" data-active-classes="bg-secondary-container text-on-surface font-medium rounded-full"><a aria-current="page" class="px-space-md py-1.5 transition-colors bg-secondary-container text-on-surface font-medium rounded-full" data-path="lectures" href="#">Lectures</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="faq-forum" href="#">FAQ Forum</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="practice-quizzes" href="#">Practice Quizzes</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="analytics" href="#">Analytics</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" data-path="review-queue" href="#">Review Queue</a></nav><div class="flex items-center gap-space-md shrink-0"><div class="inline-flex items-center p-0.5 rounded-full bg-surface-container-low"><button class="px-3 py-1 rounded-full bg-secondary-container text-on-surface font-label-sm text-label-sm transition-colors" type="button">Student</button><button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors" type="button">Teacher</button></div><a class="inline-flex shrink-0" href="#"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk9T07LijWrQWkjALNRWpbDcAofzNFqFdyh4496_2BrCGEY0QnHtISVYk8Xkq7mE1k5Vc0U91c9LEG2bKZDLhHmfm7SgvC-krJsR8428hvPHzoxYTAxlp1l84RF8dloncL3Yumpdfj57nE00-mrW23OpQ3kpe641C5hyTS8S5p9c3Mqc3Ah4eNs3OFLaQgimPhvcwfhLmcozpdXf3MIq5sPz3fvd08J2ZRNVQ8O3PkV6uOB6w8IGQu"/></a><button class="hidden sm:inline-flex items-center justify-center bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container px-space-md py-2 rounded-lg font-label-md text-label-md transition-colors" type="button">Resume Lecture</button></div></div></header><main class="w-full pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<script>
+    /* Shell Sync Script: Align App Shell navigation to Teacher role & Analytics tab */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set Teacher pill to active state
+      const roleButtons = document.querySelectorAll('header button');
+      roleButtons.forEach(btn => {
+        if (btn.textContent.trim() === 'Teacher') {
+          btn.className = 'px-3 py-1 rounded-full bg-secondary-container text-on-surface font-label-sm text-label-sm font-semibold shadow-sm transition-colors';
+        } else if (btn.textContent.trim() === 'Student') {
+          btn.className = 'px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors';
+        }
+      });
+
+      // Highlight Analytics in Shell Nav
+      const navLinks = document.querySelectorAll('header nav a');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'analytics') {
+          link.className = 'px-space-md py-1.5 rounded-full font-label-md text-label-md bg-secondary-container text-on-surface font-semibold transition-colors';
+        } else {
+          link.className = 'px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors';
+        }
+      });
+    });
+  </script>
+<!-- Breadcrumb & Top Command Row -->
+<div class="w-full px-space-lg pt-space-lg pb-space-sm">
+<div class="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<nav aria-label="Breadcrumb" class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="hover:text-on-surface transition-colors cursor-pointer">Courses</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">CS 106B</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">Lecture 08</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-medium">Analytics &amp; Learning Diagnostics</span>
+</nav>
+<!-- Live Sync Beacon -->
+<div class="flex items-center gap-2 font-code-sm text-code-sm text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-full w-fit">
+<span class="w-2 h-2 rounded-full bg-[#5db872] animate-pulse"></span>
+<span>Telemetry Synchronized: 4 mins ago</span>
+</div>
+</div>
+</div>
+<!-- Editorial Headline Section -->
+<section class="w-full px-space-lg pb-space-md">
+<div class="max-w-[1400px] mx-auto bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg">
+<div class="space-y-space-xs max-w-3xl">
+<div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold tracking-wider uppercase">
+<span>Pedagogical Diagnostic Workspace</span>
+<span class="text-outline-variant">•</span>
+<span>Faculty View</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Lecture 8: Binary Trees — Class Struggle Analytics
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+            Empirical diagnostic review across 142 enrolled students, 568 interstitial quiz submissions, and 28 slide-tagged micro-inquiries during Weeks 4–5.
+          </p>
+</div>
+<!-- Filter Controls Bar -->
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<div class="relative inline-flex items-center bg-surface-container-low rounded-lg px-3 py-2 text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors">
+<span class="text-on-surface-variant mr-1.5 font-normal">Section:</span>
+<span>All Sections</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-1">expand_more</span>
+</div>
+<div class="relative inline-flex items-center bg-surface-container-low rounded-lg px-3 py-2 text-on-surface font-label-md text-label-md cursor-pointer hover:bg-surface-container transition-colors">
+<span class="text-on-surface-variant mr-1.5 font-normal">Date:</span>
+<span>Last 7 Days</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-1">expand_more</span>
+</div>
+<div class="relative inline-flex items-center bg-surface-container-low rounded-lg px-3 py-2 text-on-surface font-label-md text-label-md">
+<span class="text-on-surface-variant mr-1.5 font-normal">Cohort:</span>
+<span class="font-semibold">Spring 2026</span>
+</div>
+<button class="inline-flex items-center gap-1.5 bg-secondary-container hover:bg-surface-container-high text-on-surface px-space-md py-2 rounded-lg font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Export Synthesis</span>
+</button>
+</div>
+</div>
+<!-- Quick KPI Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-md mt-space-lg pt-space-md border-t border-outline-variant/30">
+<div class="flex flex-col p-3 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Class Avg Comprehension</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md text-on-surface">78.4%</span>
+<span class="font-label-sm text-label-sm text-[#5db872] flex items-center font-semibold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>3.2%
+            </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">vs. Lecture 7 (Pointers)</span>
+</div>
+<div class="flex flex-col p-3 rounded-lg bg-[#c64545]/10">
+<span class="font-label-sm text-label-sm text-[#c64545] font-semibold">Critical Bottlenecks</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md text-[#c64545]">1 Slide</span>
+<span class="px-1.5 py-0.5 rounded bg-[#c64545] text-on-primary font-label-sm text-[10px]">Slide 14</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">&lt; 70% accuracy threshold</span>
+</div>
+<div class="flex flex-col p-3 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Quizzes Submitted</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md text-on-surface">568</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 580 exp.</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">97.9% cohort response rate</span>
+</div>
+<div class="flex flex-col p-3 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Interventions Active</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-md text-headline-md text-primary">2</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">live patches</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">1 pending faculty approval</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Heatmap & Diagnostic Inspector Dual-Zone -->
+<section class="w-full px-space-lg pb-space-lg">
+<div class="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- Slide Struggle Heatmap Grid (8 cols on XL) -->
+<div class="xl:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-md border-b border-outline-variant/30">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Slide Struggle Heatmap</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-code-sm text-code-sm text-on-surface-variant">32 Slides</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Aggregated student hesitation, rewind loops, and quiz pass rates</p>
+</div>
+<!-- Legend -->
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 font-label-sm text-label-sm text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#5db872]"></span>
+<span>&gt;85% High</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#e8a55a]"></span>
+<span>70–85% Moderate</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#c64545]"></span>
+<span>&lt;70% Critical</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">diamond</span>
+<span>Widget</span>
+</div>
+</div>
+</div>
+<!-- 32 Slides Grid: 4 rows x 8 columns -->
+<div class="grid grid-cols-4 sm:grid-cols-8 gap-2.5 mt-space-md">
+<!-- Slide 1 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#01</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Roadmap</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">98%</span>
+</div>
+<!-- Slide 2 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#02</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Motivations</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">96%</span>
+</div>
+<!-- Slide 3 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#03</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Formal Def</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">94%</span>
+</div>
+<!-- Slide 4 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#04</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Tree Anatomy</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">92%</span>
+</div>
+<!-- Slide 5 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#05</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Root &amp; Edge</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">95%</span>
+</div>
+<!-- Slide 6 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#06</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Subtree Prop</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">91%</span>
+</div>
+<!-- Slide 7 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#07</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Binary Rule</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">89%</span>
+</div>
+<!-- Slide 8 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#08</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">BST Concept</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">88%</span>
+</div>
+<!-- Row 2: Slides 9 to 16 -->
+<!-- Slide 9 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#09</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Node Struct</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">93%</span>
+</div>
+<!-- Slide 10 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#10</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Pointers C++</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">87%</span>
+</div>
+<!-- Slide 11 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#11</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Tree Pointer</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">86%</span>
+</div>
+<!-- Slide 12 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#12</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Tree Height</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">85%</span>
+</div>
+<!-- Slide 13 (Moderate Amber) -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container hover:bg-surface-container-high cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface">#13</span>
+<span class="w-2 h-2 rounded-full bg-[#e8a55a]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Leaf vs Intern</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">76%</span>
+</div>
+<!-- Slide 14: SELECTED CRITICAL BOTTLENECK CARD -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-[#efe9de] ring-2 ring-[#c64545] shadow-md cursor-pointer scale-105 z-10 transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-bold text-[#c64545]">#14</span>
+<span class="w-2.5 h-2.5 rounded-full bg-[#c64545] animate-ping"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-bold mt-1 truncate">Recursion Base</span>
+<span class="font-code-sm text-[10px] text-[#c64545] font-semibold mt-0.5">32% Pass</span>
+<div class="mt-1 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#c64545]"></span>
+<span class="font-label-sm text-[9px] text-[#c64545] uppercase font-bold tracking-tight">Active</span>
+</div>
+</div>
+<!-- Slide 15: Interstitial Widget (Amber diamond) -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#15</span>
+<span class="material-symbols-outlined text-[13px] text-primary">diamond</span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Nullptr Guard</span>
+<span class="font-code-sm text-[10px] text-[#e8a55a] font-semibold mt-0.5">62%</span>
+</div>
+<!-- Slide 16 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#16</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">In-order Walk</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">88%</span>
+</div>
+<!-- Row 3: Slides 17 to 24 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#17</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Pre-order Walk</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">91%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#18</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Post-order</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">89%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#19</span>
+<span class="w-2 h-2 rounded-full bg-[#e8a55a]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Traversal Demo</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">74%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#20</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Print BST</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">94%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#21</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Search Code</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">92%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#22</span>
+<span class="material-symbols-outlined text-[13px] text-primary">diamond</span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Trace Search</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">86%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#23</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Contains Key</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">95%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#24</span>
+<span class="w-2 h-2 rounded-full bg-[#e8a55a]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Insert Logic</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">73%</span>
+</div>
+<!-- Row 4: Slides 25 to 32 -->
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#25</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Ref Pointers</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">87%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#26</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Memory Alloc</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">90%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#27</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Tree Freeing</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">89%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#28</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Destructors</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">92%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#29</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Big-O Search</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">96%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#30</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Degenerate</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">88%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#31</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">AVL Teaser</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">94%</span>
+</div>
+<div class="group relative flex flex-col p-2 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-[11px] font-semibold text-on-surface-variant">#32</span>
+<span class="w-2 h-2 rounded-full bg-[#5db872]"></span>
+</div>
+<span class="font-label-sm text-[12px] text-on-surface font-medium mt-1 truncate">Next Steps</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant mt-0.5">99%</span>
+</div>
+</div>
+<!-- Heatmap Insights Bar -->
+<div class="mt-space-md p-3 rounded-lg bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">auto_graph</span>
+<span class="font-body-sm text-body-sm text-on-surface">
+              High friction clustered on <strong>Slide 14</strong> with downstream hesitation persisting into Slide 15.
+            </span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant shrink-0">Click any slide to inspect</span>
+</div>
+</div>
+<!-- Slide 14 Inspector Drawer / Popover (5 cols on XL) -->
+<div class="xl:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-[#c64545]/20">
+<!-- Inspector Header -->
+<div class="flex items-start justify-between gap-space-sm pb-space-sm border-b border-outline-variant/30">
+<div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#c64545]/10 text-[#c64545] font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>CRITICAL BOTTLENECK INSPECTOR</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1.5">
+              Slide 14: Recursive Traversal &amp; Base Case
+            </h3>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">open_in_new</span>
+</button>
+</div>
+<!-- Key Metrics Strip -->
+<div class="grid grid-cols-3 gap-2 py-3 border-b border-outline-variant/20 text-center">
+<div class="bg-surface-container-low p-2 rounded">
+<span class="font-code-sm text-code-sm text-[#c64545] font-bold">68%</span>
+<span class="block font-label-sm text-[10px] text-on-surface-variant">Incorrect Quiz 2</span>
+</div>
+<div class="bg-surface-container-low p-2 rounded">
+<span class="font-code-sm text-code-sm text-on-surface font-bold">16 Qs</span>
+<span class="block font-label-sm text-[10px] text-on-surface-variant">FAQ Inquiries</span>
+</div>
+<div class="bg-surface-container-low p-2 rounded">
+<span class="font-code-sm text-code-sm text-on-surface font-bold">4m 12s</span>
+<span class="block font-label-sm text-[10px] text-on-surface-variant">Avg Slide Dwell</span>
+</div>
+</div>
+<!-- Diagnostic Summary -->
+<div class="py-3">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Diagnostic Synthesis</span>
+<p class="font-body-md text-body-md text-on-surface mt-1">
+<strong>Primary misconception:</strong> Recursion Base Case &amp; Empty Trees. <span class="text-[#c64545] font-medium">74 of 109 incorrect answers</span> chose <code class="font-code-sm bg-surface-container px-1 py-0.5 rounded text-on-surface">height = 1</code> instead of <code class="font-code-sm bg-surface-container px-1 py-0.5 rounded text-on-surface">height = 0</code> when encountering an empty root (<code class="font-code-sm bg-surface-container px-1 py-0.5 rounded text-on-surface">nullptr</code>).
+          </p>
+</div>
+<!-- Failure Distribution breakdown -->
+<div class="space-y-2 py-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Top Wrong Answer Patterns</span>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Choice B: "1"</span>
+<span class="font-code-sm text-[12px] text-[#c64545] font-bold">68% of failures (74 students)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Counted <code class="font-code-sm text-[12px]">nullptr</code> as a valid leaf level rather than an empty subtree.
+            </p>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-[#c64545] h-full rounded-full" style="width: 68%;"></div>
+</div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Choice D: "Undefined / Segfault"</span>
+<span class="font-code-sm text-[12px] text-on-surface-variant font-medium">22% of failures (24 students)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Believed missing guard condition before dereferencing child pointers.
+            </p>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-secondary h-full rounded-full" style="width: 22%;"></div>
+</div>
+</div>
+</div>
+<!-- Student Quotes -->
+<div class="pt-3 border-t border-outline-variant/20">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Verbatim Micro-FAQ Inquiries</span>
+<span class="font-code-sm text-[11px] text-primary">16 Threads</span>
+</div>
+<div class="space-y-2">
+<div class="p-2.5 rounded-lg bg-surface-container text-on-surface text-body-sm">
+<p class="italic text-on-surface">"Wait, why does treeHeight(nullptr) return 0 if a tree with 1 node has height 1? Where does the 0 come from?"</p>
+<div class="flex items-center justify-between mt-1.5 text-on-surface-variant font-label-sm text-[11px]">
+<span>Alex K. • Section 4</span>
+<span class="flex items-center gap-1 text-primary font-semibold">
+<span class="material-symbols-outlined text-[13px]">thumb_up</span> 8 upvotes
+                </span>
+</div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container text-on-surface text-body-sm">
+<p class="italic text-on-surface">"Is base case check root == nullptr or !root-&gt;left?"</p>
+<div class="flex items-center justify-between mt-1.5 text-on-surface-variant font-label-sm text-[11px]">
+<span>Marcus T. • Section 1</span>
+<span class="flex items-center gap-1 text-primary font-semibold">
+<span class="material-symbols-outlined text-[13px]">thumb_up</span> 4 upvotes
+                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions footer -->
+<div class="flex items-center justify-between gap-space-sm pt-space-md mt-space-sm border-t border-outline-variant/20">
+<button class="text-primary hover:text-primary-container font-label-md text-label-md flex items-center gap-1 transition-colors" type="button">
+<span>Jump to Slide in Viewer</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+            View all 16 FAQ threads →
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Section: AI Recommended Interventions & Lesson Plan Augmentation -->
+<section class="w-full px-space-lg pb-space-xl">
+<div class="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Left Card: AI Recommended Interventions (5 cols) -->
+<div class="lg:col-span-5 bg-[#efe9de] rounded-xl p-space-lg shadow-sm border border-outline-variant/40 flex flex-col justify-between">
+<div class="space-y-space-md">
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold tracking-wide shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span>
+<span>CLAUDE 3.7 SYNTHESIS • GROUNDED IN 142 QUIZ RUNS</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">
+              Recommended Supplementary Material for Slide 14
+            </h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Students are consistently conflating the empty tree height base case (<code class="font-code-sm bg-surface-container-low px-1 py-0.5 rounded text-on-surface">nullptr → 0</code>) with the single-node leaf invariant (<code class="font-code-sm bg-surface-container-low px-1 py-0.5 rounded text-on-surface">1 vertex → 1</code>).
+            </p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Synthesizing an interactive dual-comparison widget between Slide 14 and 15 is projected to recover <strong>+24% post-test comprehension</strong> in tomorrow's review quiz.
+            </p>
+</div>
+<!-- Suggested Augmentations Checklist -->
+<div class="space-y-2 bg-surface-container-lowest/80 p-3 rounded-lg border border-outline-variant/30">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#5db872] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Insert Invariant Diagram (0 vs 1 node comparison)</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#5db872] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Add inline stepping animation for <code class="font-code-sm text-[12px]">max(0, 0) + 1</code></span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#5db872] mt-0.5">check_circle</span>
+<span class="font-body-sm text-body-sm text-on-surface">Draft Piazza announcement addressing Alex K.'s thread</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons Group -->
+<div class="mt-space-lg space-y-2">
+<button class="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container py-3 px-space-md rounded-lg font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>Generate Supplementary Slide &amp; Interactive Widget</span>
+</button>
+<div class="grid grid-cols-2 gap-2">
+<button class="inline-flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-container text-on-surface py-2 px-space-sm rounded-lg font-label-md text-label-md border border-outline-variant/40 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">forum</span>
+<span>Review 16 FAQs</span>
+</button>
+<button class="inline-flex items-center justify-center gap-1.5 bg-surface hover:bg-surface-container text-on-surface py-2 px-space-sm rounded-lg font-label-md text-label-md border border-outline-variant/40 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">campaign</span>
+<span>Draft Piazza Post</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Card: Live Preview of AI-Drafted Slide (7 cols) -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between gap-space-sm pb-3 border-b border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Live Preview: AI-Drafted Supplementary Slide</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-code-sm text-[11px] text-on-surface-variant">Between 14 &amp; 15</span>
+</div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-[#5db872] font-medium bg-[#5db872]/10 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-[#5db872]"></span>
+<span>Ready for Review</span>
+</span>
+</div>
+<!-- Slide Mockup Canvas -->
+<div class="bg-[#faf9f5] rounded-lg p-space-md border border-[#e6dfd8] shadow-xs">
+<div class="flex items-center justify-between border-b border-outline-variant/20 pb-2 mb-3">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-[11px] px-1.5 py-0.5 bg-secondary-container text-on-surface font-semibold rounded">SLIDE 14.5</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">The Empty Tree Invariant</span>
+</div>
+<span class="font-label-sm text-[11px] text-on-surface-variant">CS 106B Lecture 08 Supplemental</span>
+</div>
+<!-- Visual Side-by-Side Diagram -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md my-space-sm">
+<!-- Column A: nullptr -->
+<div class="bg-surface-container-lowest p-3 rounded-md border border-outline-variant/30">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm font-semibold mb-2">
+<span>EMPTY SUBTREE</span>
+<span class="text-[#c64545] font-code-sm">nullptr</span>
+</div>
+<!-- Mini inline SVG Diagram -->
+<div class="h-28 bg-surface-container-low rounded flex items-center justify-center">
+<svg class="text-on-surface-variant" height="70" viewbox="0 0 120 70" width="120">
+<circle cx="60" cy="20" fill="none" r="14" stroke="currentColor" stroke-dasharray="3 3" stroke-width="1.5"></circle>
+<text fill="currentColor" font-family="JetBrains Mono" font-size="10" text-anchor="middle" x="60" y="24">nullptr</text>
+<line marker-end="url(#arrow)" stroke="currentColor" stroke-width="1.5" x1="60" x2="60" y1="34" y2="52"></line>
+<text fill="#8f482f" font-family="Inter" font-size="11" font-weight="bold" text-anchor="middle" x="60" y="65">height = 0</text>
+</svg>
+</div>
+<div class="mt-2 text-on-surface-variant font-body-sm text-[12px] leading-tight">
+<strong class="text-on-surface">Base Case Invariant:</strong> 0 edges, 0 vertices. Does not contribute height to parent frame.
+                </div>
+</div>
+<!-- Column B: Single Node -->
+<div class="bg-surface-container-lowest p-3 rounded-md border border-outline-variant/30">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm font-semibold mb-2">
+<span>SINGLE LEAF NODE</span>
+<span class="text-[#5db872] font-code-sm">root != nullptr</span>
+</div>
+<!-- Mini inline SVG Diagram -->
+<div class="h-28 bg-surface-container-low rounded flex items-center justify-center">
+<svg class="text-on-surface" height="70" viewbox="0 0 140 70" width="140">
+<circle cx="70" cy="20" fill="#8f482f" r="14"></circle>
+<text fill="#ffffff" font-family="JetBrains Mono" font-size="11" font-weight="bold" text-anchor="middle" x="70" y="24">42</text>
+<!-- left empty branch -->
+<line stroke="#dac1ba" stroke-width="1.5" x1="60" x2="40" y1="30" y2="46"></line>
+<text fill="#87736d" font-family="JetBrains Mono" font-size="8" x="35" y="58">0</text>
+<!-- right empty branch -->
+<line stroke="#dac1ba" stroke-width="1.5" x1="80" x2="100" y1="30" y2="46"></line>
+<text fill="#87736d" font-family="JetBrains Mono" font-size="8" x="105" y="58">0</text>
+<text fill="#5db872" font-family="Inter" font-size="11" font-weight="bold" text-anchor="middle" x="70" y="65">1 + max(0,0) = 1</text>
+</svg>
+</div>
+<div class="mt-2 text-on-surface-variant font-body-sm text-[12px] leading-tight">
+<strong class="text-on-surface">Inductive Step:</strong> Leaf computes <code class="font-code-sm text-[11px]">1 + max(0, 0) = 1</code>. Solves student question Alex K.
+                </div>
+</div>
+</div>
+<!-- Code block demonstration -->
+<div class="bg-inverse-surface rounded-md p-3 text-inverse-on-surface font-code-sm text-[12px] overflow-x-auto">
+<span class="text-outline-variant">// C++ Canonical Implementation</span><br/>
+<span class="text-[#ffb59d]">int</span> <span class="text-surface-bright font-semibold">treeHeight</span>(TreeNode* root) {<br/>
+                <span class="text-[#ffb59d]">if</span> (root == <span class="text-[#ffdbd0]">nullptr</span>) {<br/>
+                  <span class="text-[#ffb59d]">return</span> <span class="text-[#ffb59d] font-bold">0</span>; <span class="text-[#dac1ba]/80">// Empty tree has zero height (Invariant)</span><br/>
+                }<br/>
+                <span class="text-[#ffb59d]">return</span> <span class="text-surface-bright">1</span> + std::max(<span class="text-surface-bright">treeHeight</span>(root-&gt;left), <span class="text-surface-bright">treeHeight</span>(root-&gt;right));<br/>
+              }
+            </div>
+</div>
+</div>
+<!-- Slide Action Toolbar -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-md border-t border-outline-variant/30 mt-space-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">history_edu</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Drafted by Kepler AI • Version 1.2</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" type="button">
+              Edit Slide Content
+            </button>
+<button class="px-space-md py-2 rounded-lg bg-[#5db872] hover:bg-[#4ea261] text-on-primary font-label-md text-label-md font-semibold transition-colors shadow-sm flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">publish</span>
+<span>Merge to Official Lesson Plan</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Real-time Academic Signals Footer Strip -->
+<section class="w-full px-space-lg pb-space-lg">
+<div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- TA Office Hours Dispatch Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between gap-space-md shadow-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-[#e8a55a]/20 flex items-center justify-center text-[#e8a55a] shrink-0">
+<span class="material-symbols-outlined text-[22px]">support_agent</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-semibold text-on-surface">TA Office Hours Alert</span>
+<span class="px-2 py-0.5 rounded-full bg-[#e8a55a]/20 text-on-surface font-code-sm text-[11px] font-bold">6 in Queue</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              6 students currently queued for base case tree recursion at Huang Pod B. Dispatching TA Claire Y.
+            </p>
+</div>
+</div>
+<button class="shrink-0 font-label-sm text-label-sm text-primary hover:text-primary-container font-semibold" type="button">
+          Broadcast Clarification →
+        </button>
+</div>
+<!-- Cohort Historical Variance Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex items-center justify-between gap-space-md shadow-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-[22px]">analytics</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Historical Cohort Comparison</span>
+<span class="px-2 py-0.5 rounded-full bg-[#c64545]/15 text-[#c64545] font-code-sm text-[11px] font-bold">+14% Error Delta</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Spring 2026 error rate on this slide is 14% higher than Winter 2025 due to the shortened Week 4 holiday.
+            </p>
+</div>
+</div>
+<button class="shrink-0 font-label-sm text-label-sm text-primary hover:text-primary-container font-semibold" type="button">
+          Inspect Historicals →
+        </button>
+</div>
+</div>
+</section>
+</div></main><footer class="w-full bg-surface-container-low py-space-xl mt-space-xl"><div class="w-full px-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm"><span class="font-headline-sm text-headline-sm text-on-surface">KeplerLearn</span><span class="font-body-sm text-body-sm text-on-surface-variant">— Rigorous Academic Workspace</span></div><div class="flex items-center gap-space-lg"><a class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Academic Integrity</a><a class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Syllabus Archive</a><a class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Office Hours</a><a class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a></div><div class="font-body-sm text-body-sm text-on-surface-variant">© 2024 KeplerLearn Institute. All rights reserved.</div></div></footer></body></html>

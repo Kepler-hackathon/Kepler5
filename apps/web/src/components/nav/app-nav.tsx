@@ -95,6 +95,25 @@ export function AppNav({
         ) : null}
       </div>
 
+      {/* Contextual live indicator */}
+      {activeHref.includes("/review") ? (
+        <span className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-error/30 bg-error/10 px-2.5 py-1 text-[11px] font-semibold font-body text-error">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-error opacity-60" style={{ animationDuration: "1.6s" }} />
+            <span className="relative size-1.5 rounded-full bg-error" />
+          </span>
+          Reviewing
+        </span>
+      ) : activeHref.includes("/analytics") ? (
+        <span className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full border border-warning/30 bg-amber-fill/10 px-2.5 py-1 text-[11px] font-semibold font-body text-warning-text">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-fill opacity-60" style={{ animationDuration: "2s" }} />
+            <span className="relative size-1.5 rounded-full bg-amber-fill" />
+          </span>
+          Monitoring
+        </span>
+      ) : null}
+
       <div className="shrink-0">
         <SegmentedControl
           label="Role"

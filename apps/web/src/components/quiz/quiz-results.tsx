@@ -6,7 +6,6 @@ import { CaretDown, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { CheckGlyph, TriangleExclamationGlyph, DashGlyph } from "@/components/ui/status-icons";
-import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
 import { ConceptSliderWidget } from "@/components/widgets/concept-slider-widget";
 import { PredictCheckWidget } from "@/components/widgets/predict-check-widget";
 import type { ArenaResult } from "./quiz-arena";
@@ -107,7 +106,15 @@ function ResultRow({
                     />
                   );
                 }
-                return <TraceStepperWidget />;
+                return (
+                  <PredictCheckWidget
+                    title="Try again"
+                    scenario={result.question.promptMd}
+                    options={result.question.options.map((o) => ({ id: o.key, label: o.text }))}
+                    correctId={result.correctKey ?? ""}
+                    explanation={result.explanationMd ?? "No explanation available."}
+                  />
+                );
               })()}
             </div>
           ) : (

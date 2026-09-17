@@ -12,12 +12,12 @@ export function CheckGlyph({ className }: GlyphProps) {
   );
 }
 
-/** Half-filled ring — in progress / moderate. Deliberately not a spinner: it holds still. */
+/** Half-filled ring — in progress. Spins when wrapped in animate-spin. */
 export function HalfRingGlyph({ className }: GlyphProps) {
   return (
-    <svg viewBox="0 0 16 16" fill="none" className={cn("size-3.5", className)} aria-hidden>
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.28" strokeWidth="2" />
-      <path d="M8 2a6 6 0 0 1 0 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg viewBox="0 0 16 16" fill="none" className={cn("size-3.5 animate-spin", className)} aria-hidden style={{ animationDuration: "0.9s" }}>
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.22" strokeWidth="2" />
+      <path d="M8 2a6 6 0 0 1 4.24 1.76" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
