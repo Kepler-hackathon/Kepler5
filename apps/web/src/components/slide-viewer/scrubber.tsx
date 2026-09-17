@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, Diamond } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 export function Scrubber({
@@ -13,6 +13,9 @@ export function Scrubber({
   onNext,
   canGoPrev,
   canGoNext,
+  prevSlideNumber,
+  nextSlideNumber,
+  nextIsInterstitial,
 }: {
   currentSlide: number;
   totalSlides: number;
@@ -22,61 +25,96 @@ export function Scrubber({
   onNext: () => void;
   canGoPrev: boolean;
   canGoNext: boolean;
+  prevSlideNumber?: number;
+  nextSlideNumber?: number;
+  nextIsInterstitial?: boolean;
 }) {
-  const trackRef = React.useRef<HTMLDivElement>(null);
-
-  function seekFromClientX(clientX: number) {
-    const track = trackRef.current;
-    if (!track) return;
-    const rect = track.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    const slide = Math.round(ratio * (totalSlides - 1)) + 1;
-    onSeek(slide);
-  }
+  const WINDOW = 3;
+  const start = Math.max(1, currentSlide - WINDOW);
+  const end = Math.min(totalSlides, currentSlide + WINDOW);
+  const tiles = Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
   return (
-    <div className="flex items-center gap-4 border-t border-hairline bg-canvas px-6 py-4">
-      <Button variant="secondary" size="sm" onClick={onPrev} disabled={!canGoPrev} aria-label="Previous slide">
-        <CaretLeft className="size-4" /> Previous
+    <div className="flex h-20 shrink-0 items-center justify-between gap-4 border-t border-hairline bg-surface-lowest px-6 py-3">
+      {/* Previous button */}
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onPrev}
+        disabled={!canGoPrev}
+        aria-label="Previous slide"
+        className="shrink-0"
+      >
+        <CaretLeft className="size-4" />
+        {prevSlideNumber != null ? (
+          <span className="hidden sm:inline">Slide {prevSlideNumber}</span>
+        ) : (
+          <span className="hidden sm:inline">Prev</span>
+        )}
       </Button>
 
-      <div
-        ref={trackRef}
-        role="slider"
-        tabIndex={0}
-        aria-label="Slide position"
-        aria-valuemin={1}
-        aria-valuemax={totalSlides}
-        aria-valuenow={currentSlide}
-        aria-valuetext={`Slide ${currentSlide} of ${totalSlides}`}
-        onClick={(e) => seekFromClientX(e.clientX)}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight") onSeek(Math.min(totalSlides, currentSlide + 1));
-          if (e.key === "ArrowLeft") onSeek(Math.max(1, currentSlide - 1));
-        }}
-        className="relative h-6 flex-1 cursor-pointer"
-      >
-        <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-hairline" />
-        <div
-          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-button-primary transition-[width] duration-150"
-          style={{ width: `${((currentSlide - 1) / (totalSlides - 1)) * 100}%` }}
-        />
-        {interstitialAfterSlides.map((afterSlide) => (
-          <span
-            key={afterSlide}
-            className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-amber-fill"
-            style={{ left: `${(afterSlide / (totalSlides - 1)) * 100}%` }}
-            title={`Interactive interstitial after slide ${afterSlide}`}
-          />
-        ))}
-        <span
-          className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-canvas bg-button-primary shadow"
-          style={{ left: `${((currentSlide - 1) / (totalSlides - 1)) * 100}%` }}
-        />
+      {/* Thumbnail strip */}
+      <div className="flex items-center gap-1.5 overflow-x-auto px-1 py-1">
+        {tiles.map((n) => {
+          const isActive = n === currentSlide;
+          const isInterstitial = interstitialAfterSlides.includes(n);
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onSeek(n)}
+              aria-label={`Go to slide ${n}`}
+              className={
+                isActive
+                  ? "relative flex h-13 w-20 shrink-0 flex-col items-center justify-center rounded-lg bg-surface-lowest p-1 ring-2 ring-button-primary shadow-sm transition-transform"
+                  : "flex h-12 w-16 shrink-0 flex-col items-center justify-center rounded-md bg-surface-card p-1 transition-transform hover:-translate-y-0.5 hover:bg-surface-cream-strong"
+              }
+            >
+              {isActive && (
+                <span className="absolute -top-2 rounded-full bg-button-primary px-1.5 py-px text-[9px] font-bold font-body text-on-primary tracking-tight">
+                  NOW
+                </span>
+              )}
+              <span
+                className={
+                  isActive
+                    ? "text-[12px] font-bold font-headline text-accent-text mt-1"
+                    : "text-[10px] font-semibold font-body text-muted"
+                }
+              >
+                {n}
+              </span>
+              <span
+                className={
+                  isActive
+                    ? "mt-0.5 h-1 w-12 rounded-full bg-primary-fixed-dim"
+                    : "mt-1 h-1 w-8 rounded-full bg-outline-variant/60"
+                }
+              />
+              {isInterstitial && (
+                <Diamond className="absolute -right-1 -top-1.5 size-3 text-accent-text" weight="fill" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      <Button variant="secondary" size="sm" onClick={onNext} disabled={!canGoNext} aria-label="Next slide">
-        Next <CaretRight className="size-4" />
+      {/* Next button */}
+      <Button
+        variant={canGoNext ? "primary" : "secondary"}
+        size="sm"
+        onClick={onNext}
+        disabled={!canGoNext}
+        aria-label="Next slide"
+        className="shrink-0"
+      >
+        {nextIsInterstitial && <Diamond className="size-3.5" weight="fill" />}
+        {nextSlideNumber != null ? (
+          <span className="hidden sm:inline">Slide {nextSlideNumber}</span>
+        ) : (
+          <span className="hidden sm:inline">Next</span>
+        )}
+        <CaretRight className="size-4" />
       </Button>
     </div>
   );

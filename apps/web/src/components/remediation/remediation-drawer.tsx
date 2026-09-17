@@ -60,18 +60,15 @@ export function RemediationDrawer({
   onOpenChange,
   slideLabel,
   question,
+  wrongAnswerOption,
   onLoadingChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   slideLabel: string;
-  /** The question the student just missed. Its explanation is real, question-generation-time
-   * AI content (grounded in the actual lecture slide) — showing that instead of a fixed demo
-   * widget is what makes this drawer actually about the mistake the student made, not the same
-   * unrelated "treeHeight recursion" trace every time (there's no backend step today that
-   * generates a fresh interactive widget per-mistake — see docs/ui/screens_breakdown.md
-   * Screen 5's latency-handling note, which assumes that step exists; it doesn't yet). */
   question?: QuizQuestion | null;
+  /** The wrong option the student chose — shown in a red callout at the top of the drawer. */
+  wrongAnswerOption?: { key: string; text: string } | null;
   onLoadingChange?: (loading: boolean) => void;
 }) {
   const [published, setPublished] = React.useState(false);
@@ -240,7 +237,53 @@ export function RemediationDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent title="Let&rsquo;s explore this concept interactively.">{content}</DrawerContent>
+      <DrawerContent title="Let&rsquo;s explore this concept interactively.">
+        {/* Breadcrumb bar */}
+        <div className="mb-4 flex items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-2 text-[13px] font-body text-muted">
+          <span className="font-medium text-ink">{slideLabel}</span>
+          {question && (
+            <>
+              <span className="text-hairline">·</span>
+              <span className="line-clamp-1 max-w-[32rem]">{question.prompt}</span>
+            </>
+          )}
+        </div>
+
+        {/* Wrong-answer callout */}
+        {wrongAnswerOption && (
+          <div className="mb-4 rounded-[var(--radius-control)] border-2 border-error/40 bg-error/10 px-4 py-3">
+            <p className="text-[11px] font-semibold font-body uppercase tracking-[0.5px] text-error mb-1">
+              Your answer
+            </p>
+            <p className="text-[14px] text-body font-body">
+              <span className="font-semibold text-ink">{wrongAnswerOption.key.toUpperCase()}.</span>{" "}
+              {wrongAnswerOption.text}
+            </p>
+          </div>
+        )}
+
+        {content}
+
+        {/* Footer action buttons */}
+        <div className="mt-5 flex items-center gap-3 border-t border-hairline pt-4">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-2 text-[14px] font-medium font-body text-ink hover:bg-surface-cream-strong transition-colors"
+          >
+            Re-attempt Question
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              toast.push({ message: "Forked to your sandbox — open it from the sidebar." });
+            }}
+            className="rounded-[var(--radius-control)] bg-button-primary px-4 py-2 text-[14px] font-medium font-body text-on-primary hover:bg-button-primary-hover transition-colors"
+          >
+            Fork to Sandbox
+          </button>
+        </div>
+      </DrawerContent>
     </Drawer>
   );
 }

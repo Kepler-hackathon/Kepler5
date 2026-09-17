@@ -27,6 +27,7 @@ export interface QuizOption {
 
 export interface QuizQuestion {
   id: string;
+  questionId?: string | null;
   prompt: string;
   options: QuizOption[];
   correctExplanation: string;

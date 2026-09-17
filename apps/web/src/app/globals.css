@@ -55,7 +55,20 @@
   /* Error/red — already AA compliant as specified, used for fill and text */
   --color-error: #c64545;
 
+  /* Stitch design token bridge — Material You equivalents missing from base palette */
+  --color-surface-lowest: #ffffff;
+  --color-primary-fixed: #ffdbd0;
+  --color-primary-fixed-dim: #ffb59d;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-secondary-container: #e8e2d7;
+  --color-tertiary-container: #af5e45;
+  --color-on-surface-variant: #54433e;
+  --color-outline-variant: #dac1ba;
+  --color-surface-dim: #dcd9d7;
+
   /* Fonts */
+  --font-headline: var(--font-eb-garamond), var(--font-cormorant), Georgia, serif;
   --font-display: var(--font-cormorant), Georgia, serif;
   --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
   --font-code: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
@@ -110,6 +123,18 @@
 
   --color-error: var(--color-error);
 
+  --color-surface-lowest: var(--color-surface-lowest);
+  --color-primary-fixed: var(--color-primary-fixed);
+  --color-primary-fixed-dim: var(--color-primary-fixed-dim);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-surface-dim: var(--color-surface-dim);
+
+  --font-headline: var(--font-headline);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-code: var(--font-code);

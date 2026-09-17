@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, lectures, slides, lectureItems, generatedItems } from '@kepler/db'
+import { db, lectures, slides, lectureItems, generatedItems, quizQuestions } from '@kepler/db'
 import { eq, and, isNull, asc, inArray } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
@@ -71,12 +71,23 @@ export async function GET(
     : []
   const contentById = new Map(contentRows.map((c) => [c.id, c]))
 
+  // For quiz items, resolve quizQuestions.id so the client can POST to /api/questions/[id]/answer
+  const quizRefIds = rawItemRows.filter((r) => r.kind === 'quiz').map((r) => r.refId)
+  const quizRows = quizRefIds.length
+    ? await db
+        .select({ id: quizQuestions.id, generatedItemId: quizQuestions.generatedItemId })
+        .from(quizQuestions)
+        .where(inArray(quizQuestions.generatedItemId, quizRefIds))
+    : []
+  const quizIdByRefId = new Map(quizRows.map((q) => [q.generatedItemId, q.id]))
+
   const itemRows = rawItemRows.map((item) => {
     const generated = contentById.get(item.refId)
     return {
       ...item,
       content: generated?.content ?? null,
       conceptLabel: generated?.conceptLabel ?? null,
+      ...(item.kind === 'quiz' ? { questionId: quizIdByRefId.get(item.refId) ?? null } : {}),
     }
   })
 

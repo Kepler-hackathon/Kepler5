@@ -1,4 +1,3 @@
-import { Tabs, TabList, TabTrigger, TabPanel } from "@/components/ui/tabs";
 import { FaqTab } from "./faq-tab";
 import { CopilotTab } from "@/components/copilot/copilot-tab";
 
@@ -16,19 +15,34 @@ export function Sidebar({
   slideId: string | null;
 }) {
   return (
-    <Tabs defaultValue="faq" className="flex h-full flex-col">
-      <div className="px-4 pt-3">
-        <TabList>
-          <TabTrigger value="faq">Slide FAQ</TabTrigger>
-          <TabTrigger value="copilot">AI Copilot</TabTrigger>
-        </TabList>
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        {/* FAQ section */}
+        <FaqTab
+          moduleId={moduleId}
+          lectureId={lectureId}
+          slideId={slideId}
+          slideNumber={slideNumber}
+          lectureNumber={lectureNumber}
+        />
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="h-px flex-1 bg-hairline" />
+          <span className="rounded-full border border-hairline bg-surface-card px-2 py-0.5 text-[10px] font-semibold font-body uppercase tracking-wider text-muted">
+            AI Tutor
+          </span>
+          <div className="h-px flex-1 bg-hairline" />
+        </div>
+
+        {/* AI section */}
+        <CopilotTab
+          lectureId={lectureId}
+          slideId={slideId ?? undefined}
+          slideNumber={slideNumber}
+          lectureNumber={lectureNumber}
+        />
       </div>
-      <TabPanel value="faq" className="min-h-0 flex-1">
-        <FaqTab moduleId={moduleId} lectureId={lectureId} slideId={slideId} slideNumber={slideNumber} lectureNumber={lectureNumber} />
-      </TabPanel>
-      <TabPanel value="copilot" className="min-h-0 flex-1">
-        <CopilotTab lectureId={lectureId} slideId={slideId ?? undefined} slideNumber={slideNumber} lectureNumber={lectureNumber} />
-      </TabPanel>
-    </Tabs>
+    </div>
   );
 }

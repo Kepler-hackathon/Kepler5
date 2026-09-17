@@ -30,6 +30,7 @@ export interface ApiLectureItem {
   status: string;
   content: unknown;
   conceptLabel: string | null;
+  questionId?: string | null;
 }
 
 export interface Bundle {

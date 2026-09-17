@@ -38,6 +38,7 @@ function toQuizQuestion(item: ApiLectureItem): QuizQuestion | null {
   if (!content?.promptMd || !content.options) return null;
   return {
     id: item.id,
+    questionId: item.questionId ?? null,
     prompt: content.promptMd,
     correctExplanation: content.explanationMd ?? "",
     options: content.options.map((o) => ({
@@ -97,6 +98,14 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
   const [presenting, setPresenting] = React.useState(false);
   const [stopIndex, setStopIndex] = React.useState(0);
   const [explanationPending, setExplanationPending] = React.useState(false);
+
+  const wrongAnswerOption = React.useMemo(() => {
+    if (!drawerQuestion) return null;
+    const answer = quizAnswers[drawerQuestion.id];
+    if (!answer || answer.correct) return null;
+    const chosen = drawerQuestion.options.find((o) => o.id === answer.optionId);
+    return chosen ? { key: chosen.id, text: chosen.text } : null;
+  }, [drawerQuestion, quizAnswers]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -204,6 +213,24 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goNext, goPrev, goTo, stops.length]);
 
+  // Must be before any early return — Rules of Hooks
+  const prevSlideStop = React.useMemo(() => {
+    for (let i = stopIndex - 1; i >= 0; i--) {
+      if (stops[i]?.kind === "slide") return stops[i] as { kind: "slide"; slide: ApiSlide };
+    }
+    return null;
+  }, [stops, stopIndex]);
+  const nextStop = stops[stopIndex + 1];
+  const nextSlideStop = React.useMemo(() => {
+    for (let i = stopIndex + 1; i < stops.length; i++) {
+      if (stops[i]?.kind === "slide") return stops[i] as { kind: "slide"; slide: ApiSlide };
+    }
+    return null;
+  }, [stops, stopIndex]);
+  const prevSlideNumber = prevSlideStop ? (prevSlideStop.slide.index ?? 0) + 1 : undefined;
+  const nextSlideNumber = nextSlideStop ? (nextSlideStop.slide.index ?? 0) + 1 : undefined;
+  const nextIsInterstitial = nextStop?.kind === "quiz";
+
   if (error) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-canvas text-center">
@@ -236,6 +263,12 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
       setDrawerQuestion(question);
       setDrawerOpen(true);
     }
+    // Persist to DB so analytics heatmap reflects real quiz performance
+    const qid = question.questionId ?? question.id;
+    apiJson(`/api/questions/${qid}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ selectedKey: answer.optionId }),
+    }).catch(() => {});
   }
 
   return (
@@ -257,11 +290,13 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
         onToggleFullscreen={() => setFullscreen((f) => !f)}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onPresent={() => setPresenting(true)}
+        totalSlides={totalSlides}
+        currentSlide={currentSlideNumber}
       />
 
       <div className="relative flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col xl:w-[70%] xl:flex-none">
-          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:w-[70%] lg:flex-none">
+          <div className="min-h-0 flex-1 overflow-y-auto p-5 md:p-7 flex items-center justify-center">
             {stop.kind === "slide" ? (
               <SlideStage slide={stop.slide} />
             ) : stop.kind === "quiz" ? (
@@ -299,21 +334,24 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
             onNext={goNext}
             canGoPrev={canGoPrev}
             canGoNext={canGoNext}
+            prevSlideNumber={prevSlideNumber}
+            nextSlideNumber={nextSlideNumber}
+            nextIsInterstitial={nextIsInterstitial}
           />
         </div>
 
         <div
-          className={`fixed inset-y-0 right-0 z-30 w-full max-w-sm border-l border-hairline bg-canvas shadow-2xl transition-transform duration-200 xl:static xl:z-auto xl:w-[30%] xl:max-w-none xl:translate-x-0 xl:shadow-none ${
+          className={`fixed inset-y-0 right-0 z-30 w-full max-w-sm border-l border-hairline bg-canvas shadow-2xl transition-transform duration-200 lg:static lg:z-auto lg:w-[30%] lg:max-w-none lg:translate-x-0 lg:shadow-none ${
             sidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          <div className="flex items-center justify-between border-b border-hairline px-4 py-3 xl:hidden">
+          <div className="flex items-center justify-between border-b border-hairline px-4 py-3 lg:hidden">
             <span className="text-[14px] font-medium font-body text-ink">Help</span>
             <button onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" className="text-muted hover:text-ink">
               <X className="size-5" />
             </button>
           </div>
-          <div className="h-[calc(100%-49px)] xl:h-full">
+          <div className="h-[calc(100%-49px)] lg:h-full">
             <Sidebar
               slideNumber={currentSlideNumber}
               lectureNumber={lecture.orderIndex}
@@ -330,6 +368,7 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
         onOpenChange={setDrawerOpen}
         slideLabel={drawerSlideLabel}
         question={drawerQuestion}
+        wrongAnswerOption={wrongAnswerOption}
         onLoadingChange={setExplanationPending}
       />
 

@@ -13,7 +13,17 @@ function statusFor(m: ApiModule) {
   return { kind: "not-started" as const, label: "Draft" };
 }
 
-export function ModuleCard({ module: m, courseId, role = "student" }: { module: ApiModule; courseId: string; role?: "student" | "teacher" }) {
+export function ModuleCard({
+  module: m,
+  courseId,
+  role = "student",
+  lectureCount,
+}: {
+  module: ApiModule;
+  courseId: string;
+  role?: "student" | "teacher";
+  lectureCount?: number;
+}) {
   const status = statusFor(m);
   const isDraft = role === "teacher" && m.status === "draft";
   const href = isDraft ? `/course/${courseId}/module/${m.id}/wizard` : `/course/${courseId}/module/${m.id}`;
@@ -37,6 +47,11 @@ export function ModuleCard({ module: m, courseId, role = "student" }: { module: 
         {m.aiOptIn ? (
           <span className="rounded-full border border-accent-text/30 bg-accent-text/10 px-2 py-0.5 text-[11px] font-medium font-body text-accent-text">
             AI Content
+          </span>
+        ) : null}
+        {lectureCount !== undefined ? (
+          <span className="rounded-full border border-hairline bg-surface-card px-2 py-0.5 text-[11px] font-medium font-body text-muted">
+            {lectureCount} {lectureCount === 1 ? "Lecture" : "Lectures"}
           </span>
         ) : null}
       </div>
