@@ -1,0 +1,12 @@
+.git
+**/.next
+**/node_modules
+**/*.md
+.env*
+infra
+docs
+aws
+awscliv2.zip
+docker-compose.yml
+workers
+pnpm-lock.yaml.bak

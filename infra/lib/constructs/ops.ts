@@ -97,11 +97,10 @@ export class Ops extends Construct {
     );
 
     alarm(
-      new cloudwatch.Alarm(this, 'AuroraAtMaxCapacity', {
-        metric: props.db.cluster.metricServerlessDatabaseCapacity({ period: cdk.Duration.minutes(5) }),
-        threshold: props.maxAcu,
+      new cloudwatch.Alarm(this, 'DbHighCpu', {
+        metric: props.db.instance.metricCPUUtilization({ period: cdk.Duration.minutes(5) }),
+        threshold: 80,
         evaluationPeriods: 2,
-        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       }),
     );

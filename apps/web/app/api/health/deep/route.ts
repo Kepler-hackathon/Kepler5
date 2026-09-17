@@ -6,7 +6,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const { rows } = await getPool().query<{ now: string; version: string }>('select now()::text as now, version()');
-    return Response.json({ ok: true, db: 'ok', now: rows[0].now, postgres: rows[0].version }, { headers: { 'Cache-Control': 'no-store' } });
+    const row = rows[0];
+    if (!row) throw new Error('no rows returned');
+    return Response.json({ ok: true, db: 'ok', now: row.now, postgres: row.version }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     return Response.json(
       { ok: false, db: 'error', message: err instanceof Error ? err.message : String(err) },

@@ -61,12 +61,13 @@ export class App extends Construct {
       maxHealthyPercent: 200,
       healthCheckGracePeriod: cdk.Duration.seconds(90),
       runtimePlatform: {
-        cpuArchitecture: ecs.CpuArchitecture.X86_64,
+        cpuArchitecture: ecs.CpuArchitecture.ARM64,
         operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
       },
       taskImageOptions: {
-        image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../../apps/web'), {
-          platform: Platform.LINUX_AMD64,
+        image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../..'), {
+          platform: Platform.LINUX_ARM64,
+          file: 'apps/web/Dockerfile',
         }),
         containerName: 'web',
         containerPort: 3000,

@@ -6,18 +6,19 @@ import { Construct } from 'constructs';
 
 export interface DataProps {
   vpc: ec2.IVpc;
-  /** 0 enables scale-to-zero (backend-plan §14.13 row 173: keep 0.5 during demo hours). */
+  /** Unused — kept for call-site compatibility with the original Aurora props. */
   minAcu: number;
   maxAcu: number;
 }
 
 /**
- * backend-plan.md §3.1 / §5 (decision B4): Aurora Serverless v2 PostgreSQL 16 in the
- * isolated subnets. Credentials are generated into Secrets Manager; the master user has
- * rds_superuser so the first migration can `create extension vector`.
+ * RDS PostgreSQL 16 single instance in the isolated subnets.
+ * Uses t4g.micro (free-tier eligible) instead of Aurora Serverless v2,
+ * which cannot be created via CloudFormation on free-plan AWS accounts.
+ * pgvector is available on RDS PostgreSQL >= 15 — enable it in the first migration.
  */
 export class Data extends Construct {
-  readonly cluster: rds.DatabaseCluster;
+  readonly instance: rds.DatabaseInstance;
   readonly secret: secretsmanager.ISecret;
   readonly securityGroup: ec2.SecurityGroup;
   readonly databaseName = 'kepler';
@@ -27,34 +28,31 @@ export class Data extends Construct {
 
     this.securityGroup = new ec2.SecurityGroup(this, 'DbSg', {
       vpc: props.vpc,
-      description: 'Aurora - ingress only from app and worker security groups',
+      description: 'RDS - ingress only from app and worker security groups',
       allowAllOutbound: false,
     });
 
-    const scaleToZero = props.minAcu === 0;
-
-    this.cluster = new rds.DatabaseCluster(this, 'Cluster', {
-      engine: rds.DatabaseClusterEngine.auroraPostgres({ version: rds.AuroraPostgresEngineVersion.VER_16_13 }),
+    this.instance = new rds.DatabaseInstance(this, 'Instance', {
+      engine: rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_16 }),
       vpc: props.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       securityGroups: [this.securityGroup],
       credentials: rds.Credentials.fromGeneratedSecret('kepler', { secretName: 'kepler/db' }),
-      defaultDatabaseName: this.databaseName,
-      serverlessV2MinCapacity: props.minAcu,
-      serverlessV2MaxCapacity: props.maxAcu,
-      ...(scaleToZero ? { serverlessV2AutoPauseDuration: cdk.Duration.minutes(30) } : {}),
-      writer: rds.ClusterInstance.serverlessV2('writer', { publiclyAccessible: false }),
+      databaseName: this.databaseName,
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
+      allocatedStorage: 20,
+      storageType: rds.StorageType.GP2,
       storageEncrypted: true,
-      backup: { retention: cdk.Duration.days(1) },       // §12: hackathon retention
+      backupRetention: cdk.Duration.days(1),
       deletionProtection: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       cloudwatchLogsExports: ['postgresql'],
+      publiclyAccessible: false,
     });
 
-    this.secret = this.cluster.secret!;
+    this.secret = this.instance.secret!;
   }
 
-  /** Allow a client security group to reach Postgres. */
   allowFrom(sg: ec2.ISecurityGroup, description: string) {
     this.securityGroup.addIngressRule(sg, ec2.Port.tcp(5432), description);
   }

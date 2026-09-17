@@ -1,7 +1,7 @@
 # backend-plan.md §9.1: deck-parser Lambda container.
 # Debian base + Lambda Runtime Interface Client instead of the AWS Python base image, because
 # LibreOffice is not packaged for Amazon Linux 2023 and apt gives a reproducible install.
-FROM --platform=linux/amd64 python:3.12-slim-bookworm
+FROM --platform=linux/arm64 python:3.12-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \

@@ -79,7 +79,7 @@ export class KeplerStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'JobsQueueUrl', { value: jobs.queue.queueUrl });
     new cdk.CfnOutput(this, 'ProcessModuleStateMachineArn', { value: jobs.stateMachine.stateMachineArn });
     new cdk.CfnOutput(this, 'DbSecretArn', { value: data.secret.secretArn });
-    new cdk.CfnOutput(this, 'DbClusterEndpoint', { value: data.cluster.clusterEndpoint.hostname });
+    new cdk.CfnOutput(this, 'DbEndpoint', { value: data.instance.dbInstanceEndpointAddress });
     new cdk.CfnOutput(this, 'EcsClusterName', { value: app.cluster.clusterName });
     new cdk.CfnOutput(this, 'EcsServiceName', { value: app.service.serviceName });
     new cdk.CfnOutput(this, 'WebTaskDefinitionArn', { value: app.service.taskDefinition.taskDefinitionArn });

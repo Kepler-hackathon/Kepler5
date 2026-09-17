@@ -81,7 +81,7 @@ export class Jobs extends Construct {
       architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.seconds(120),
       memorySize: 1024,
-      reservedConcurrentExecutions: 8, // §14.13 row 174: bounds DB connections and Bedrock RPM
+      // reservedConcurrentExecutions omitted — free-plan accounts have a low concurrent limit
       vpc: props.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [workerSg],
@@ -108,8 +108,9 @@ export class Jobs extends Construct {
     // ---- Deck parser (Python container) ----------------------------------------------------
     this.deckParser = new lambda.DockerImageFunction(this, 'DeckParser', {
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../../workers/deck-parser'), {
-        platform: Platform.LINUX_AMD64,
+        platform: Platform.LINUX_ARM64,
       }),
+      architecture: lambda.Architecture.ARM_64,
       timeout: cdk.Duration.minutes(15),
       memorySize: 3008,
       ephemeralStorageSize: cdk.Size.gibibytes(4),
