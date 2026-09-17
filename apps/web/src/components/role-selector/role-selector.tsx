@@ -45,39 +45,43 @@ export function RoleSelector() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6">
       <KeplerMark className="size-10" />
       <h1 className="mt-4">KeplerLearn</h1>
-      <p className="mt-2 text-[16px] text-muted font-body">Pick how you&rsquo;re joining today.</p>
+      <p className="mt-2 text-[16px] text-muted font-body">Select your experience for the hackathon walkthrough.</p>
 
-      <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
-        {(
-          [
-            { role: "student" as const, label: "Student", desc: "Lectures, practice quizzes, and AI-grounded help.", Icon: GraduationCap },
-            { role: "teacher" as const, label: "Teacher", desc: "Modules, analytics, and the review queue.", Icon: ChalkboardTeacher },
-          ]
-        ).map(({ role, label, desc, Icon }) => (
-          <button
-            key={role}
-            onClick={() => choose(role)}
-            disabled={entering !== null}
-            className={cn(
-              "flex flex-col items-start gap-3 rounded-[var(--radius-card)] border border-hairline bg-surface-card p-6 text-left transition-colors",
-              "hover:border-body disabled:cursor-not-allowed disabled:opacity-60"
-            )}
-          >
-            <div className="flex w-full items-center justify-between">
-              <Icon className="size-7 text-accent-text" />
-              {lastRole === role ? (
-                <span className="text-[11px] font-medium font-body uppercase tracking-[0.5px] text-muted">
-                  (last used)
-                </span>
-              ) : null}
-            </div>
-            <h3 className="text-[22px]">
-              {label}
-              {entering === role ? <CircleNotch className="ml-2 inline-block size-4 animate-spin align-middle" /> : null}
-            </h3>
-            <p className="text-[14px] text-muted font-body">{desc}</p>
-          </button>
-        ))}
+      <div className="mt-10 w-full max-w-sm space-y-3">
+        {/* Primary CTA — Student */}
+        <button
+          onClick={() => choose("student")}
+          disabled={entering !== null}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] bg-button-primary px-6 py-3 text-[15px] font-medium font-body text-on-primary transition-opacity",
+            "hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          )}
+        >
+          <GraduationCap className="size-4" />
+          Continue as Student
+          {entering === "student" ? <CircleNotch className="ml-1 size-4 animate-spin" /> : null}
+          {lastRole === "student" ? <span className="ml-1 text-[11px] opacity-70">(last used)</span> : null}
+        </button>
+
+        {/* Secondary CTA — Teacher */}
+        <button
+          onClick={() => choose("teacher")}
+          disabled={entering !== null}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-canvas px-6 py-3 text-[15px] font-medium font-body text-ink transition-colors",
+            "hover:border-body disabled:cursor-not-allowed disabled:opacity-60"
+          )}
+        >
+          <ChalkboardTeacher className="size-4" />
+          Continue as Teacher
+          {entering === "teacher" ? <CircleNotch className="ml-1 size-4 animate-spin" /> : null}
+          {lastRole === "teacher" ? <span className="ml-1 text-[11px] text-muted">(last used)</span> : null}
+        </button>
+
+        {/* Demo Mode banner */}
+        <div className="mt-4 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-2.5 text-center text-[13px] font-body text-muted">
+          Demo Mode — instant role switching available from the top bar at any time.
+        </div>
       </div>
 
       {slowLoad ? (

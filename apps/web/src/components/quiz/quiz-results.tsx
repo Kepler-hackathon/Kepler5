@@ -17,9 +17,8 @@ function ResultRow({
   alreadyLoaded: boolean;
   onLoaded: () => void;
 }) {
-  const [expanded, setExpanded] = React.useState(false);
+  const [expandMode, setExpandMode] = React.useState<null | "widget" | "text">(null);
   const [loading, setLoading] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<"explanation" | "interactive">("explanation");
 
   if (result.status === "correct") {
     return (
@@ -30,20 +29,20 @@ function ResultRow({
     );
   }
 
-  function toggle() {
-    if (!expanded && !alreadyLoaded) {
+  function chooseMode(mode: "widget" | "text") {
+    if (!alreadyLoaded) {
       setLoading(true);
       window.setTimeout(() => {
         setLoading(false);
         onLoaded();
       }, 450);
     }
-    setExpanded((v) => !v);
+    setExpandMode(mode);
   }
 
   return (
     <div className="rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-3">
-      <button onClick={toggle} className="flex w-full items-center gap-3 text-left">
+      <div className="flex w-full items-center gap-3">
         {result.status === "incorrect" ? (
           <TriangleExclamationGlyph className="text-error" />
         ) : (
@@ -51,19 +50,41 @@ function ResultRow({
         )}
         <span className="flex-1 text-[14px] font-body text-ink">{result.question.promptMd}</span>
         <span className="text-[12px] text-muted font-body">{result.status === "incorrect" ? "Missed" : "Skipped"}</span>
-        <CaretDown className={cn("size-4 text-muted transition-transform", expanded && "rotate-180")} />
-      </button>
-      {expanded ? (
+      </div>
+
+      {expandMode === null ? (
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => chooseMode("widget")}
+            className="rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-1.5 text-[13px] font-body text-ink hover:border-accent-text/50 hover:text-accent-text"
+          >
+            ✦ Explain with Widget
+          </button>
+          <button
+            onClick={() => chooseMode("text")}
+            className="rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-1.5 text-[13px] font-body text-muted hover:text-ink"
+          >
+            Just Show Answer
+          </button>
+        </div>
+      ) : (
         <div className="mt-3 border-t border-hairline pt-3">
           {loading ? (
             <CircleNotch className="size-4 animate-spin text-muted" />
+          ) : expandMode === "widget" ? (
+            <div className="space-y-2">
+              <p className="text-[12px] font-medium font-body uppercase tracking-[0.5px] text-accent-text">Interactive explanation</p>
+              <p className="text-[13px] leading-relaxed text-body font-body">
+                {result.explanationMd ?? "No explanation available."}
+              </p>
+            </div>
           ) : (
             <p className="text-[13px] leading-relaxed text-body font-body">
               {result.explanationMd ?? "No explanation available."}
             </p>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

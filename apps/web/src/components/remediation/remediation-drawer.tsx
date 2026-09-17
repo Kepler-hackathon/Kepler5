@@ -1,15 +1,50 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/cn";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { SkeletonWidget } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
+import { ConceptSliderWidget } from "@/components/widgets/concept-slider-widget";
+import { PredictCheckWidget } from "@/components/widgets/predict-check-widget";
 import { SparkGlyph } from "@/components/ui/status-icons";
+import { ThumbsUp, ThumbsDown } from "@phosphor-icons/react";
 import { PublishDialog } from "./publish-dialog";
 import { useGenerationTiming } from "@/lib/ai/simulate-stream";
 import { useToast } from "@/components/ui/toast";
 import type { QuizQuestion } from "@/lib/data/types";
+
+const DEMO_SLIDER = {
+  title: "Array Growth Cost",
+  description: "Total copy operations as a dynamic array doubles. Amortized cost per insert stays O(1) even though individual doublings are expensive.",
+  variable: "n",
+  unit: "inserts",
+  min: 1,
+  max: 32,
+  defaultValue: 16,
+  series: [
+    { label: "O(n²) naive realloc", color: "#c64545" },
+    { label: "O(n) doubling", color: "#cc785c" },
+  ],
+  seriesValues: [
+    Array.from({ length: 32 }, (_, i) => (i + 1) * (i + 1)),
+    Array.from({ length: 32 }, (_, i) => (i + 1) * 2),
+  ],
+};
+
+const DEMO_PREDICT = {
+  title: "Stack LIFO Order",
+  scenario: "You push A, then B, then C onto a stack. In what order do you pop all three?",
+  options: [
+    { id: "a", label: "A, B, C" },
+    { id: "b", label: "C, B, A" },
+    { id: "c", label: "B, A, C" },
+    { id: "d", label: "C, A, B" },
+  ],
+  correctId: "b",
+  explanation: "A stack is LIFO — last in, first out. C was pushed last so it pops first, then B, then A.",
+};
 
 /**
  * Screen 5 — Contextual AI Generation Drawer (frontend plan Part III §3, S5).
@@ -41,6 +76,7 @@ export function RemediationDrawer({
 }) {
   const [published, setPublished] = React.useState(false);
   const [forceFallback, setForceFallback] = React.useState(false);
+  const [feedback, setFeedback] = React.useState<"up" | "down" | null>(null);
   const { tier, ready } = useGenerationTiming(open, { simulatedLatencyMs: 1400 });
   const toast = useToast();
 
@@ -59,6 +95,8 @@ export function RemediationDrawer({
 
   // Simulate "already shared by someone" for odd-numbered slides (demo only).
   const lastNum = parseInt(slideLabel.replace(/\D/g, ""), 10);
+  // Deterministically pick widget variant (0=TraceStepper, 1=ConceptSlider, 2=PredictCheck)
+  const widgetVariant = isNaN(lastNum) ? 0 : lastNum % 3;
   const alreadySharedBy = !isNaN(lastNum) && lastNum % 2 !== 0 ? "Maya P." : undefined;
 
   const publishTrigger = alreadySharedBy ? (
@@ -130,24 +168,73 @@ export function RemediationDrawer({
   } else if (question) {
     content = (
       <div className="space-y-4 py-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-button-primary px-2.5 py-1 text-[10px] font-semibold font-body uppercase tracking-[1.5px] text-on-primary">
-          <SparkGlyph className="size-3" />
-          AI generated
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-button-primary px-2.5 py-1 text-[10px] font-semibold font-body uppercase tracking-[1.5px] text-on-primary">
+            <SparkGlyph className="size-3" />
+            AI generated
+          </span>
+          <span className="text-[11px] text-muted font-body">· Grounded in {slideLabel}</span>
+        </div>
         <p className="text-[13px] font-medium font-body uppercase tracking-[0.5px] text-muted">Why this answer is correct</p>
         <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-body font-body">
           {question.correctExplanation || "No explanation was generated for this question."}
         </p>
-        <div className="flex justify-end pt-2">{publishTrigger}</div>
+        <div className="flex items-center justify-between gap-3 border-t border-hairline pt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] font-body text-muted">Helpful?</span>
+            <button
+              type="button"
+              aria-pressed={feedback === "up"}
+              onClick={() => setFeedback(feedback === "up" ? null : "up")}
+              className={cn("rounded-full p-1.5 transition-colors", feedback === "up" ? "text-success" : "text-muted hover:text-ink")}
+            >
+              <ThumbsUp className="size-4" />
+            </button>
+            <button
+              type="button"
+              aria-pressed={feedback === "down"}
+              onClick={() => setFeedback(feedback === "down" ? null : "down")}
+              className={cn("rounded-full p-1.5 transition-colors", feedback === "down" ? "text-error" : "text-muted hover:text-ink")}
+            >
+              <ThumbsDown className="size-4" />
+            </button>
+          </div>
+          {publishTrigger}
+        </div>
       </div>
     );
   } else {
-    // Defensive fallback for the rare case this drawer opens without a question attached.
+    // Defensive fallback: cycle through widget types based on slide number.
+    const widgetContent = widgetVariant === 1 ? (
+      <ConceptSliderWidget {...DEMO_SLIDER} />
+    ) : widgetVariant === 2 ? (
+      <PredictCheckWidget {...DEMO_PREDICT} />
+    ) : (
+      <TraceStepperWidget published={published} publishTrigger={publishTrigger} />
+    );
     content = (
-      <TraceStepperWidget
-        published={published}
-        publishTrigger={publishTrigger}
-      />
+      <div className="space-y-4">
+        {widgetContent}
+        <div className="flex items-center gap-3 border-t border-hairline pt-4">
+          <span className="text-[13px] font-body text-muted">Helpful?</span>
+          <button
+            type="button"
+            aria-pressed={feedback === "up"}
+            onClick={() => setFeedback(feedback === "up" ? null : "up")}
+            className={cn("rounded-full p-1.5 transition-colors", feedback === "up" ? "text-success" : "text-muted hover:text-ink")}
+          >
+            <ThumbsUp className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-pressed={feedback === "down"}
+            onClick={() => setFeedback(feedback === "down" ? null : "down")}
+            className={cn("rounded-full p-1.5 transition-colors", feedback === "down" ? "text-error" : "text-muted hover:text-ink")}
+          >
+            <ThumbsDown className="size-4" />
+          </button>
+        </div>
+      </div>
     );
   }
 

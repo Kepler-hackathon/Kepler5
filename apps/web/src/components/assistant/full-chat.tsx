@@ -96,6 +96,10 @@ function ThreadChat({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-2 border-b border-hairline px-6 py-2">
+        <span className="text-[12px] font-medium font-body text-muted uppercase tracking-[0.5px]">Scope</span>
+        <span className="rounded-full border border-hairline bg-surface-card px-3 py-1 text-[12px] font-body text-ink">Course-wide</span>
+      </div>
       <div ref={listRef} onScroll={onScroll} className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
