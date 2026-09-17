@@ -6,6 +6,7 @@ import { TagChip } from "@/components/ui/badges";
 import { Field, TextInput, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { apiJson, ApiError } from "@/lib/api-client";
 
 const TITLE_MAX = 150;
 
@@ -14,14 +15,29 @@ const TITLE_MAX = 150;
  * deferred — from a slide the tag arrives pre-filled and read-only, which is the one
  * path this build needs; the Module/Lecture dropdown picker lives in Screen 2 (Track B).
  */
-export function ComposeQuestionDialog({ slideNumber, lectureNumber }: { slideNumber: number; lectureNumber: number }) {
+export function ComposeQuestionDialog({
+  moduleId,
+  lectureId,
+  slideId,
+  slideNumber,
+  lectureNumber,
+  onPosted,
+}: {
+  moduleId: string;
+  lectureId: string;
+  slideId: string | null;
+  slideNumber: number;
+  lectureNumber: number;
+  onPosted: () => void;
+}) {
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [body, setBody] = React.useState("");
+  const [posting, setPosting] = React.useState(false);
   const toast = useToast();
 
   function requestClose(next: boolean) {
-    if (!next && (title.trim() || body.trim())) {
+    if (!next && (title.trim() || body.trim()) && !posting) {
       const confirmed = window.confirm("Discard this question?");
       if (!confirmed) return;
     }
@@ -33,6 +49,32 @@ export function ComposeQuestionDialog({ slideNumber, lectureNumber }: { slideNum
   }
 
   const canPost = title.trim().length > 0 && body.trim().length > 0;
+
+  async function post() {
+    setPosting(true);
+    try {
+      await apiJson("/api/faq/threads", {
+        method: "POST",
+        body: JSON.stringify({
+          title: title.trim(),
+          bodyMd: body.trim(),
+          tagModuleId: moduleId,
+          tagLectureId: lectureId,
+          tagSlideId: slideId,
+          suggestedSlideIndex: slideNumber,
+        }),
+      });
+      setOpen(false);
+      setTitle("");
+      setBody("");
+      onPosted();
+      toast.push({ message: `Posted to Slide ${slideNumber} · Lecture ${lectureNumber}` });
+    } catch (err) {
+      toast.push({ message: err instanceof ApiError ? err.message : "Failed to post question" });
+    } finally {
+      setPosting(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={requestClose}>
@@ -51,21 +93,16 @@ export function ComposeQuestionDialog({ slideNumber, lectureNumber }: { slideNum
             <Textarea id="q-body" rows={4} value={body} onChange={(e) => setBody(e.target.value)} required />
           </Field>
           <div className="flex justify-end gap-3 pt-1">
-            <Button variant="ghost" onClick={() => requestClose(false)}>
+            <Button variant="ghost" onClick={() => requestClose(false)} disabled={posting}>
               Cancel
             </Button>
             <Button
               variant="primary"
-              disabled={!canPost}
+              disabled={!canPost || posting}
               disabledReason="Add a title and details before posting"
-              onClick={() => {
-                setOpen(false);
-                setTitle("");
-                setBody("");
-                toast.push({ message: `Posted to Slide ${slideNumber} · Recursion` });
-              }}
+              onClick={post}
             >
-              Post
+              {posting ? "Posting…" : "Post"}
             </Button>
           </div>
         </div>
