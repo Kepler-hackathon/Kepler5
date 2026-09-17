@@ -121,7 +121,16 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
   const stop = stops[stopIndex];
   const totalSlides = bundle ? bundle.slides.filter((s) => !s.isSupplementary).length : 0;
 
-  const currentSlideNumber = stop?.kind === "slide" ? (stop.slide.index ?? 0) + 1 : totalSlides;
+  // A quiz/complete stop has no slide of its own — it's anchored after a slide, not at
+  // totalSlides. Scan backward for the nearest preceding "slide" stop so the scrubber tracks
+  // where the interstitial actually sits in the lecture instead of jumping to the end.
+  const currentSlideNumber = React.useMemo(() => {
+    for (let i = stopIndex; i >= 0; i--) {
+      const s = stops[i];
+      if (s.kind === "slide") return (s.slide.index ?? 0) + 1;
+    }
+    return totalSlides;
+  }, [stops, stopIndex, totalSlides]);
 
   React.useEffect(() => {
     if (stop?.kind === "slide") {
