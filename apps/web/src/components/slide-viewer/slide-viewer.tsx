@@ -125,9 +125,12 @@ export function SlideViewer({ lectureId, initialSlide }: { lectureId: string; in
   // totalSlides. Scan backward for the nearest preceding "slide" stop so the scrubber tracks
   // where the interstitial actually sits in the lecture instead of jumping to the end.
   const currentSlideNumber = React.useMemo(() => {
-    for (let i = stopIndex; i >= 0; i--) {
+    // stops can be [] (still loading) while stopIndex hasn't caught up yet, or stopIndex can
+    // momentarily point past the end of a freshly-recomputed stops array — stops[i] is safely
+    // undefined in either case, same as the `stop?.kind` optional chaining this replaced.
+    for (let i = Math.min(stopIndex, stops.length - 1); i >= 0; i--) {
       const s = stops[i];
-      if (s.kind === "slide") return (s.slide.index ?? 0) + 1;
+      if (s?.kind === "slide") return (s.slide.index ?? 0) + 1;
     }
     return totalSlides;
   }, [stops, stopIndex, totalSlides]);
