@@ -235,7 +235,7 @@ function WidgetRenderer({ widget }: { widget: WidgetArgs }) {
   if (widget.type === "trace_stepper" && widget.code && widget.steps) {
     return (
       <div className="mt-2">
-        <TraceStepperWidget code={widget.code} trace={widget.steps} />
+        <TraceStepperWidget code={widget.code} trace={widget.steps} title={widget.title} />
       </div>
     );
   }

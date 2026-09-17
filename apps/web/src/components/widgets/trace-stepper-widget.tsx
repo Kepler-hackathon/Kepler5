@@ -5,7 +5,6 @@ import { CaretLeft, CaretRight, ArrowCounterClockwise, ThumbsDown, ThumbsUp, Pla
 import { cn } from "@/lib/cn";
 import { IconButton } from "@/components/ui/button";
 import { SparkGlyph } from "@/components/ui/status-icons";
-import { CitationChip } from "@/components/ui/badges";
 import { TREE_HEIGHT_CODE, TREE_HEIGHT_TRACE, type TraceStep } from "@/lib/data/trace-stepper";
 
 // BST that mirrors the treeHeight demo trace — nodes visited in DFS order.
@@ -101,16 +100,21 @@ function TreePanel({ stepIndex }: { stepIndex: number }) {
 export function TraceStepperWidget({
   code = TREE_HEIGHT_CODE,
   trace = TREE_HEIGHT_TRACE,
+  title,
+  description,
   onHelpful,
   publishTrigger,
   published,
 }: {
   code?: string[];
   trace?: TraceStep[];
+  title?: string;
+  description?: string;
   onHelpful?: (helpful: boolean) => void;
   publishTrigger?: React.ReactNode;
   published?: boolean;
 }) {
+  const isDemo = code === TREE_HEIGHT_CODE;
   const [stepIndex, setStepIndex] = React.useState(0);
   const [feedback, setFeedback] = React.useState<"up" | "down" | null>(null);
   const [playing, setPlaying] = React.useState(false);
@@ -135,7 +139,7 @@ export function TraceStepperWidget({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-medium font-body uppercase tracking-[1px] text-on-dark-soft">
-          Stepper · Recursion Stack
+          {title ?? "Stepper · Recursion Stack"}
         </div>
         <div className="inline-flex items-center gap-1.5 rounded-full bg-button-primary px-3 py-1 text-[11px] font-semibold font-body uppercase tracking-[1.5px] text-on-primary">
           <SparkGlyph />
@@ -143,24 +147,16 @@ export function TraceStepperWidget({
         </div>
       </div>
 
-      <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-on-dark-soft font-body">
-        This traces treeHeight one call at a time so you can see exactly when the base case
-        fires — and what it returns — before any dereference of a null pointer can happen.
-      </p>
+      {description && (
+        <p className="mt-3 max-w-prose text-[14px] leading-relaxed text-on-dark-soft font-body">
+          {description}
+        </p>
+      )}
 
-      <div className="mt-2 flex flex-wrap gap-2">
-        <CitationChip className="border-white/15 bg-transparent text-on-dark-soft">
-          Grounded in Slide 14
-        </CitationChip>
-        <CitationChip className="border-white/15 bg-transparent text-on-dark-soft">
-          Textbook 3.2
-        </CitationChip>
-      </div>
-
-      {/* Two-column body */}
-      <div className="mt-5 grid grid-cols-12 gap-6">
+      {/* Two-column body — tree panel only shown for the demo widget */}
+      <div className={cn("mt-5 grid gap-6", isDemo ? "grid-cols-12" : "grid-cols-1")}>
         {/* Left: code + call stack + variables + narration + controls */}
-        <div className="col-span-7 space-y-5">
+        <div className={cn("space-y-5", isDemo ? "col-span-7" : "col-span-1")}>
           {/* Code panel */}
           <div className="overflow-x-auto rounded-[var(--radius-control)] bg-surface-dark-soft p-4 font-code text-[13px] leading-6">
             {code.map((line, i) => {
@@ -262,10 +258,12 @@ export function TraceStepperWidget({
           </div>
         </div>
 
-        {/* Right: tree visualization */}
-        <div className="col-span-5">
-          <TreePanel stepIndex={Math.min(stepIndex, TREE_NODES.length - 1)} />
-        </div>
+        {/* Right: tree visualization — only for demo widget */}
+        {isDemo && (
+          <div className="col-span-5">
+            <TreePanel stepIndex={Math.min(stepIndex, TREE_NODES.length - 1)} />
+          </div>
+        )}
       </div>
 
       {/* Action bar — full width */}

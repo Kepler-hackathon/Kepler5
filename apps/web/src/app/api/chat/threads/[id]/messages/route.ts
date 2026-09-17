@@ -209,6 +209,10 @@ export async function POST(
           correctId: z.string().optional().describe('id of the correct option (predict_check only)'),
           explanation: z.string().optional().describe('Explanation shown after checking (predict_check only)'),
         }),
+        // Without execute, the AI SDK's multi-step loop tries a second Bedrock call with an
+        // undefined tool result, which hangs the stream. Returning a simple ack lets step 2
+        // complete cleanly so the model can add any follow-up text.
+        execute: async () => ({ rendered: true }),
       },
     },
     onFinish: async ({ text, usage }) => {
