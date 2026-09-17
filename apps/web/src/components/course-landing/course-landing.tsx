@@ -9,6 +9,7 @@ import {
   ArrowRight,
   MagnifyingGlass,
   Lightning,
+  GearSix,
 } from "@phosphor-icons/react";
 import { AppNav } from "@/components/nav/app-nav";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -26,6 +27,12 @@ interface ApiCourse {
   name: string;
   term: string | null;
   instructorName: string | null;
+  description: string | null;
+  syllabusUrl: string | null;
+  textbookTitle: string | null;
+  textbookUrl: string | null;
+  officeHours: string | null;
+  prerequisites: string | null;
 }
 
 interface ApiLecture {
@@ -60,11 +67,11 @@ export function CourseLanding({ courseId }: { courseId: string }) {
   const load = React.useCallback(() => {
     setError(null);
     Promise.all([
-      apiJson<{ courses: ApiCourse[] }>("/api/courses").then((d) => d.courses.find((c) => c.id === courseId) ?? null),
+      apiJson<ApiCourse>(`/api/courses/${courseId}`),
       apiJson<{ modules: ApiModule[]; reviewPendingCount?: number }>(`/api/course?courseId=${courseId}`),
     ])
       .then(async ([foundCourse, moduleData]) => {
-        setCourse(foundCourse);
+        setCourse(foundCourse ?? null);
         setModules(moduleData.modules);
         setReviewPendingCount(moduleData.reviewPendingCount);
 
@@ -185,6 +192,31 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                     <p className="text-[15px] text-muted font-body mt-1">
                       {[course?.instructorName, course?.code].filter(Boolean).join(" · ")}
                     </p>
+                    {course?.description && (
+                      <p className="text-[14px] text-body font-body mt-2 max-w-2xl leading-relaxed">
+                        {course.description}
+                      </p>
+                    )}
+                    {course?.prerequisites && (
+                      <p className="text-[12px] text-muted font-body mt-1">
+                        <span className="font-semibold text-ink">Prerequisites:</span> {course.prerequisites}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {course?.textbookTitle && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-card border border-hairline text-[12px] text-body font-body">
+                          <BookOpen className="size-3.5 text-button-primary shrink-0" />
+                          {course.textbookUrl
+                            ? <a href={course.textbookUrl} target="_blank" rel="noreferrer" className="hover:text-button-primary transition-colors">{course.textbookTitle}</a>
+                            : course.textbookTitle}
+                        </span>
+                      )}
+                      {course?.syllabusUrl && (
+                        <a href={course.syllabusUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card border border-hairline text-[12px] text-body font-body hover:text-button-primary transition-colors">
+                          📄 Syllabus
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   {/* Stat pills */}
@@ -210,6 +242,15 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                         </span>
                       </Link>
                     ) : null}
+                    {role === "teacher" && (
+                      <Link
+                        href={`/course/${courseId}/settings`}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-surface-card hover:bg-surface-cream-strong transition-all shadow-sm border border-hairline"
+                      >
+                        <GearSix weight="duotone" className="size-[16px] text-muted" />
+                        <span className="text-[13px] font-medium font-body text-body">Course Details</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
 
@@ -391,13 +432,21 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                       <Lightning weight="fill" className="size-5 text-button-primary" />
                       <h4 className="text-[20px] font-headline">Section &amp; Office Hours</h4>
                     </div>
-                    <p className="text-[13px] text-muted font-body">
-                      TAs are available for questions on current lecture topics.
-                    </p>
+                    {course?.officeHours ? (
+                      <p className="text-[14px] text-body font-body whitespace-pre-line">
+                        {course.officeHours}
+                      </p>
+                    ) : (
+                      <p className="text-[13px] text-muted font-body">
+                        TAs are available for questions on current lecture topics.
+                      </p>
+                    )}
                     <div className="bg-surface-soft rounded-lg p-3 flex items-center justify-between mt-1">
                       <div className="flex flex-col">
-                        <span className="text-[13px] font-medium font-body text-ink">Office Hours</span>
-                        <span className="text-[11px] text-muted font-body">Check schedule for availability</span>
+                        <span className="text-[13px] font-medium font-body text-ink">
+                          {course?.officeHours ? "See schedule above" : "Check schedule for availability"}
+                        </span>
+                        <span className="text-[11px] text-muted font-body">Ask questions on the forum</span>
                       </div>
                       <Link
                         href={`/course/${courseId}/forum`}

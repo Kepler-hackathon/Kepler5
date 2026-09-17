@@ -33,6 +33,17 @@ export const courses = pgTable('courses', {
   code: text('code'),
   term: text('term'),
   instructorName: text('instructor_name'),
+  description: text('description'),
+  syllabusUrl: text('syllabus_url'),
+  textbookTitle: text('textbook_title'),
+  textbookAuthor: text('textbook_author'),
+  textbookIsbn: text('textbook_isbn'),
+  textbookUrl: text('textbook_url'),
+  officeHours: text('office_hours'),
+  homeworkPolicy: text('homework_policy'),
+  gradingPolicy: text('grading_policy'),
+  prerequisites: text('prerequisites'),
+  contactEmail: text('contact_email'),
   createdAt: now(),
 })
 

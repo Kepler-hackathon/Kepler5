@@ -15,6 +15,13 @@
       "when": 1789611983539,
       "tag": "0001_extensions_and_generated",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789659204763,
+      "tag": "0002_steady_lizard",
+      "breakpoints": true
     }
   ]
 }
