@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import type { Slide } from "@/lib/data/types";
 import { BinaryTreeDiagram } from "./binary-tree-diagram";
 
@@ -10,12 +13,20 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 export function SlideStage({ slide }: { slide: Slide }) {
+  const [showText, setShowText] = React.useState(false);
+
   return (
     <div className="flex h-full flex-col justify-center rounded-[var(--radius-card)] bg-canvas px-10 py-10 sm:px-14">
       <p className="text-[13px] font-medium font-body uppercase tracking-[1px] text-accent-text">
         Slide {slide.displayNumber}
       </p>
       <h2 className="mt-2 max-w-3xl">{slide.title}</h2>
+
+      {slide.hasOriginalMedia ? (
+        <p className="mt-3 text-[12px] text-muted font-body">
+          This slide contained visual diagrams that can&rsquo;t be shown in this text-based preview.
+        </p>
+      ) : null}
 
       {slide.layout === "code-diagram" && slide.code ? (
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -34,6 +45,18 @@ export function SlideStage({ slide }: { slide: Slide }) {
 
       {slide.takeaway && slide.layout !== "title-bullets" ? (
         <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-muted font-body">{slide.takeaway}</p>
+      ) : null}
+
+      <button
+        onClick={() => setShowText((v) => !v)}
+        className="mt-4 self-start text-[12px] font-body text-muted underline-offset-2 hover:text-ink hover:underline"
+      >
+        {showText ? "Hide slide text" : "Slide text"}
+      </button>
+      {showText ? (
+        <div className="mt-2 max-w-2xl rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-3 text-[13px] leading-relaxed text-body font-body">
+          {slide.slideText}
+        </div>
       ) : null}
     </div>
   );

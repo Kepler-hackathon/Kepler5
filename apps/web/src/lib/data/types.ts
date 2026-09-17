@@ -11,6 +11,8 @@ export interface Slide {
   /** Screen-reader / low-bandwidth alternative to the rendered slide (frontend plan S4 edges). */
   slideText: string;
   isSupplementary?: boolean;
+  /** True when the original slide deck had images/diagrams that can't be shown in this text preview. */
+  hasOriginalMedia?: boolean;
   /** Presenter-only notes (S12). Hidden entirely when absent. */
   presenterNotes?: string;
 }
@@ -51,6 +53,7 @@ export interface FaqThread {
 export interface Lecture {
   id: string;
   courseId: string;
+  moduleId: string;
   number: number;
   title: string;
   moduleTitle: string;

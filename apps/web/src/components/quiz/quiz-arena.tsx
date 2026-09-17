@@ -14,7 +14,15 @@ export interface ArenaResult {
 }
 
 /** S6b Arena: explicit Next question (D9, no auto-advance), Skip, no going back. */
-export function QuizArena({ questions, onFinish }: { questions: BankQuestion[]; onFinish: (results: ArenaResult[]) => void }) {
+export function QuizArena({
+  questions,
+  onFinish,
+  onExit,
+}: {
+  questions: BankQuestion[];
+  onFinish: (results: ArenaResult[]) => void;
+  onExit?: () => void;
+}) {
   const [index, setIndex] = React.useState(0);
   const [selected, setSelected] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
@@ -64,8 +72,28 @@ export function QuizArena({ questions, onFinish }: { questions: BankQuestion[]; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitted, selected, question]);
 
+  function handleExit() {
+    if (!onExit) return;
+    if (index === 0 || window.confirm("Leave quiz? Your progress won't be saved.")) {
+      onExit();
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
+      {onExit ? (
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={handleExit}
+            className="flex items-center gap-1.5 text-[13px] text-muted font-body hover:text-ink"
+          >
+            ← Back to quiz builder
+          </button>
+          <span className="text-[13px] text-muted font-body">
+            Question {index + 1} of {questions.length}
+          </span>
+        </div>
+      ) : null}
       <div className="flex items-center justify-center gap-2" aria-label={`Question ${index + 1} of ${questions.length}`}>
         {questions.map((q, i) => (
           <span

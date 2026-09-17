@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, PaperPlaneRight, Stop, Sparkle, Plus } from "@phosphor-icons/react";
+import { ArrowDown, PaperPlaneRight, Stop, Sparkle, Plus, List, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { AppNav } from "@/components/nav/app-nav";
 import { IconButton, Button } from "@/components/ui/button";
@@ -24,6 +24,46 @@ function nextId() {
   return `full-msg-${idCounter}`;
 }
 
+const STORAGE_KEY = "keplerlearn:chat:conversations";
+
+type SavedConversation = {
+  id: string;
+  title: string;
+  messages: ChatMessageData[];
+  citedLectures: number[];
+};
+
+function ConversationList({
+  conversations,
+  activeConvId,
+  onSelect,
+  onSwitch,
+}: {
+  conversations: SavedConversation[];
+  activeConvId: string;
+  onSelect?: () => void;
+  onSwitch: (conv: SavedConversation) => void;
+}) {
+  if (conversations.length === 0) {
+    return <p className="mt-3 text-[12px] text-muted font-body px-1">No saved conversations yet.</p>;
+  }
+  return (
+    <div className="mt-3 space-y-0.5">
+      {conversations.map((c) => (
+        <button
+          key={c.id}
+          onClick={() => { onSwitch(c); onSelect?.(); }}
+          className={`w-full truncate rounded px-2 py-1.5 text-left text-[13px] font-body transition-colors ${
+            c.id === activeConvId ? "bg-surface-card text-ink" : "text-muted hover:bg-surface-soft hover:text-ink"
+          }`}
+        >
+          {c.title || "New conversation"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Screen 11 — full-page AI Course Assistant (frontend plan Part III, S11). Same message
  * design as the S4 Copilot, at full width, with a scope of "whole course" by default and
@@ -40,6 +80,12 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
   const [draft, setDraft] = React.useState("");
   const [atBottom, setAtBottom] = React.useState(true);
   const [citedLectures, setCitedLectures] = React.useState<number[]>(continuedFrom ? [continuedFrom.lecture] : []);
+  const [listDrawerOpen, setListDrawerOpen] = React.useState(false);
+  const [conversations, setConversations] = React.useState<SavedConversation[]>([]);
+  const [activeConvId, setActiveConvId] = React.useState<string>(() => `conv-${Date.now()}`);
+  const [widgetPendingId, setWidgetPendingId] = React.useState<string | null>(null);
+  const widgetTimerRef = React.useRef<number | null>(null);
+  const prevStreamingRef = React.useRef<ChatMessageData | null>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
 
   const streaming = useStreamingText(streamingMessage?.text ?? "", { active: streamingMessage !== null });
@@ -56,6 +102,55 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
     setStreamingMessage(null);
   }
 
+  // Load saved conversations on mount
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved: SavedConversation[] = JSON.parse(raw);
+        if (saved.length > 0) {
+          setConversations(saved);
+          const last = saved[saved.length - 1];
+          setActiveConvId(last.id);
+          setMessages(last.messages);
+          setCitedLectures(last.citedLectures);
+        }
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist current conversation whenever messages change
+  React.useEffect(() => {
+    if (messages.length === 0) return;
+    const title = messages.find((m) => m.role === "user")?.text?.slice(0, 40) ?? "New conversation";
+    setConversations((prev) => {
+      const existing = prev.findIndex((c) => c.id === activeConvId);
+      const updated: SavedConversation = { id: activeConvId, title, messages, citedLectures };
+      const next =
+        existing >= 0
+          ? prev.map((c) => (c.id === activeConvId ? updated : c))
+          : [...prev, updated];
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  // Detect when a streaming message with a widget finishes and starts the resolution delay
+  React.useEffect(() => {
+    const prev = prevStreamingRef.current;
+    prevStreamingRef.current = streamingMessage;
+    if (prev?.widget && !streamingMessage) {
+      if (widgetTimerRef.current) clearTimeout(widgetTimerRef.current);
+      setWidgetPendingId(prev.id);
+      widgetTimerRef.current = window.setTimeout(() => setWidgetPendingId(null), 1400);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamingMessage]);
+
   React.useEffect(() => {
     if (atBottom) listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, streaming.displayed, atBottom]);
@@ -66,13 +161,47 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 40);
   }
 
+  function startNewChat() {
+    setMessages([]);
+    setStreamingMessage(null);
+    setCitedLectures([]);
+    setActiveConvId(`conv-${Date.now()}`);
+    setListDrawerOpen(false);
+  }
+
+  function switchConversation(conv: SavedConversation) {
+    setMessages(conv.messages);
+    setCitedLectures(conv.citedLectures);
+    setActiveConvId(conv.id);
+    setStreamingMessage(null);
+  }
+
   function send(text: string) {
-    if (!text.trim() || streamingMessage) return;
+    if (!text.trim() || streamingMessage || widgetPendingId) return;
     setMessages((m) => [...m, { id: nextId(), role: "user", text: text.trim() }]);
     setAtBottom(true);
     if (/mini-quiz/i.test(text)) {
       setStreamingMessage({ id: nextId(), role: "assistant", text: "Here are two quick checks:", quiz: MINI_QUIZ });
       setCitedLectures((prev) => (prev.includes(8) ? prev : [...prev, 8]));
+      setDraft("");
+      return;
+    }
+    if (/visual|diagram|show me|picture/i.test(text)) {
+      const widgetAnswer = answerFor(text);
+      if (widgetAnswer.grounded) setCitedLectures((prev) => (prev.includes(8) ? prev : [...prev, 8]));
+      setStreamingMessage({
+        id: nextId(),
+        role: "assistant",
+        text: widgetAnswer.text,
+        citation: widgetAnswer.citation,
+        grounded: widgetAnswer.grounded,
+        widget: {
+          typeBadge: "trace-stepper",
+          title: "Tree Height — Call Stack Walkthrough",
+          explanation: "Interactive step-through of treeHeight(root) showing each recursive call, its return value, and how the call stack unwinds from the deepest leaf back to the root.",
+          state: "loading",
+        },
+      });
       setDraft("");
       return;
     }
@@ -99,20 +228,23 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
             variant="secondary"
             size="sm"
             className="w-full justify-start gap-2"
-            onClick={() => {
-              setMessages([]);
-              setStreamingMessage(null);
-              setCitedLectures([]);
-            }}
+            onClick={startNewChat}
           >
             <Plus className="size-4" /> New chat
           </Button>
-          <div className="mt-4 rounded-[var(--radius-control)] bg-surface-card px-3 py-2 text-[13px] font-body text-ink">
-            {title}
-          </div>
+          <ConversationList conversations={conversations} activeConvId={activeConvId} onSwitch={switchConversation} />
         </aside>
 
         <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center gap-3 border-b border-hairline px-4 py-2.5 lg:hidden">
+            <button
+              onClick={() => setListDrawerOpen(true)}
+              className="flex items-center gap-1.5 text-[13px] font-medium font-body text-muted hover:text-ink"
+              aria-label="Open conversation list"
+            >
+              <List className="size-4" /> Conversations
+            </button>
+          </div>
           <div ref={listRef} onScroll={onScroll} className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
             {isEmpty ? (
               <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
@@ -134,10 +266,10 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
             ) : (
               <>
                 {messages.map((m) => (
-                  <ChatMessageView key={m.id} message={m} />
+                  <ChatMessageView key={m.id} message={m} widgetLoading={m.id === widgetPendingId} />
                 ))}
                 {streamingMessage ? (
-                  <ChatMessageView message={streamingMessage} streamedText={streaming.displayed} isStreaming={streaming.status === "streaming"} />
+                  <ChatMessageView message={streamingMessage} streamedText={streaming.displayed} isStreaming={streaming.status === "streaming"} widgetLoading={false} />
                 ) : null}
               </>
             )}
@@ -183,7 +315,7 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
                   <Stop weight="fill" />
                 </IconButton>
               ) : (
-                <IconButton label="Send" disabled={!draft.trim()} onClick={() => send(draft)} className="text-button-primary disabled:text-muted">
+                <IconButton label="Send" disabled={!draft.trim() || !!widgetPendingId} onClick={() => send(draft)} className="text-button-primary disabled:text-muted">
                   <PaperPlaneRight />
                 </IconButton>
               )}
@@ -191,6 +323,29 @@ export function FullChat({ courseId, continuedFrom }: { courseId: string; contin
           </div>
         </div>
       </div>
+
+      {listDrawerOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="absolute inset-0 bg-ink/20" onClick={() => setListDrawerOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-64 border-r border-hairline bg-canvas p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[13px] font-medium font-body text-ink">Conversations</span>
+              <button onClick={() => setListDrawerOpen(false)} className="text-muted hover:text-ink">
+                <X className="size-4" />
+              </button>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full justify-start gap-2"
+              onClick={startNewChat}
+            >
+              <Plus className="size-4" /> New chat
+            </Button>
+            <ConversationList conversations={conversations} activeConvId={activeConvId} onSwitch={switchConversation} onSelect={() => setListDrawerOpen(false)} />
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

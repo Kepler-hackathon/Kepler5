@@ -71,7 +71,7 @@ export function ForumComposeDialog({ onPost }: { onPost: (title: string) => void
                 disabled={!selectedModule}
                 className="w-full rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-2 text-[14px] text-ink font-body disabled:opacity-50"
               >
-                <option value="">Whole module</option>
+                <option value="">{selectedModule ? "Whole module" : "Select a module first"}</option>
                 {selectedModule?.lectures.map((l) => (
                   <option key={l.number} value={l.number}>
                     Lecture {l.number}

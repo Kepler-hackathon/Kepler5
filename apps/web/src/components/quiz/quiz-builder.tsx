@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import { moduleDetails } from "@/lib/data/curriculum";
 import { questionsForLectures } from "@/lib/data/quiz-bank";
 
@@ -14,6 +15,20 @@ export function QuizBuilder({
 }) {
   const [selected, setSelected] = React.useState<Set<number>>(new Set(initialSelected));
   const [generating, setGenerating] = React.useState(false);
+  const [savedSession, setSavedSession] = React.useState<{ lectureNumbers: number[] } | null>(null);
+  const treeRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const raw = window.localStorage.getItem("keplerlearn:quiz:saved-session");
+    if (raw) {
+      try { setSavedSession(JSON.parse(raw)); } catch {}
+    }
+  }, []);
+
+  function resumeSaved() {
+    window.localStorage.removeItem("keplerlearn:quiz:saved-session");
+    onGenerate(savedSession!.lectureNumbers);
+  }
 
   function toggleLecture(number: number) {
     setSelected((prev) => {
@@ -35,6 +50,19 @@ export function QuizBuilder({
 
   const selectedCount = selected.size;
   const estimatedQuestions = questionsForLectures([...selected]).length;
+
+  function handleTreeKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const container = treeRef.current;
+    if (!container) return;
+    const boxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>("input[type='checkbox']:not(:disabled)")
+    );
+    const idx = boxes.indexOf(document.activeElement as HTMLInputElement);
+    if (e.key === "ArrowDown" && idx < boxes.length - 1) boxes[idx + 1]?.focus();
+    if (e.key === "ArrowUp" && idx > 0) boxes[idx - 1]?.focus();
+  }
 
   function generate() {
     if (selectedCount === 0) return;
@@ -58,6 +86,14 @@ export function QuizBuilder({
 
   return (
     <div className="mx-auto max-w-2xl">
+      {savedSession ? (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-4 py-3">
+          <p className="text-[14px] font-body text-ink">
+            You have an unfinished quiz from {savedSession.lectureNumbers.length} lecture{savedSession.lectureNumbers.length !== 1 ? "s" : ""}.
+          </p>
+          <Button variant="secondary" size="sm" onClick={resumeSaved}>Resume &rarr;</Button>
+        </div>
+      ) : null}
       <h1>Build a practice quiz</h1>
       <p className="mt-1 text-[15px] text-muted font-body">Select the lectures you want to be quizzed on.</p>
 
@@ -67,7 +103,7 @@ export function QuizBuilder({
         </p>
       ) : null}
 
-      <div className="mt-6 space-y-4">
+      <div ref={treeRef} className="mt-6 space-y-4" onKeyDown={handleTreeKeyDown}>
         {moduleDetails.map((m) => {
           const lectureNumbers = m.lectures.map((l) => l.number);
           const selectedInModule = lectureNumbers.filter((n) => selected.has(n));
@@ -91,19 +127,26 @@ export function QuizBuilder({
                 </span>
               </label>
               <div className="mt-2 ml-7 space-y-1.5">
-                {m.lectures.map((l) => (
-                  <label key={l.number} className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(l.number)}
-                      onChange={() => toggleLecture(l.number)}
-                      className="size-4 accent-[var(--color-button-primary)]"
-                    />
-                    <span className="text-[14px] text-body font-body">
-                      Lecture {l.number}: {l.title}
-                    </span>
-                  </label>
-                ))}
+                {m.lectures.map((l) => {
+                  const hasQuestions = questionsForLectures([l.number]).length > 0;
+                  return (
+                    <label key={l.number} className={cn("flex items-center gap-3", !hasQuestions && "opacity-50")}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(l.number)}
+                        onChange={() => hasQuestions && toggleLecture(l.number)}
+                        disabled={!hasQuestions}
+                        className="size-4 accent-[var(--color-button-primary)] disabled:cursor-not-allowed"
+                      />
+                      <span className="flex items-center gap-1.5 text-[14px] text-body font-body">
+                        Lecture {l.number}: {l.title}
+                        {!hasQuestions ? (
+                          <span className="text-[11px] text-muted font-body">(no questions yet)</span>
+                        ) : null}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           );

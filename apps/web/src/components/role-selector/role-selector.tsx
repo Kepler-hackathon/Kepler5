@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { GraduationCap, ChalkboardTeacher, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { KeplerMark } from "@/components/nav/kepler-mark";
-import { useToast } from "@/components/ui/toast";
 
 type Role = "student" | "teacher";
 const LAST_ROLE_KEY = "keplerlearn:last-role";
@@ -16,9 +15,9 @@ const LAST_ROLE_KEY = "keplerlearn:last-role";
  */
 export function RoleSelector() {
   const router = useRouter();
-  const toast = useToast();
   const [lastRole, setLastRole] = React.useState<Role | null>(null);
   const [entering, setEntering] = React.useState<Role | null>(null);
+  const [slowLoad, setSlowLoad] = React.useState(false);
 
   React.useEffect(() => {
     // localStorage doesn't exist during SSR, so this has to be a post-mount read (not
@@ -31,13 +30,13 @@ export function RoleSelector() {
 
   function choose(role: Role) {
     if (entering) return;
-    if (role === "teacher") {
-      toast.push({ message: "Teacher screens aren't part of this preview yet." });
-      return;
-    }
     setEntering(role);
     window.localStorage.setItem(LAST_ROLE_KEY, role);
-    window.setTimeout(() => router.push("/courses"), 400);
+    const slowTimer = window.setTimeout(() => setSlowLoad(true), 3000);
+    window.setTimeout(() => {
+      window.clearTimeout(slowTimer);
+      router.push("/courses");
+    }, 400);
   }
 
   return (
@@ -78,6 +77,12 @@ export function RoleSelector() {
           </button>
         ))}
       </div>
+
+      {slowLoad ? (
+        <p className="mt-6 animate-pulse text-[14px] text-muted font-body">
+          Waking up the demo&hellip;
+        </p>
+      ) : null}
     </div>
   );
 }
