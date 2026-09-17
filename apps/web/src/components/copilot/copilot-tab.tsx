@@ -11,7 +11,7 @@ import { ChatMessageView } from "./chat-message";
 import { useIdentity } from "@/lib/identity";
 import { apiJson } from "@/lib/api-client";
 
-const STARTER_QUESTIONS = ["Explain this more simply", "What should I remember from this?", "Give me an example"];
+const STARTER_QUESTIONS = ["Step through Code Trace", "Explain more simply", "Show me visually", "Give me a mini-quiz"];
 const CHAR_LIMIT = 4000;
 
 /**
@@ -105,10 +105,11 @@ function CopilotThread({
   }
 
   const isEmpty = messages.length === 0;
-  const asMessageData = (m: Message): { id: string; role: "user" | "assistant"; text: string } => ({
+  const asMessageData = (m: Message) => ({
     id: m.id,
-    role: m.role === "user" ? "user" : "assistant",
+    role: m.role === "user" ? "user" as const : "assistant" as const,
     text: m.content,
+    toolInvocations: m.toolInvocations,
   });
 
   return (

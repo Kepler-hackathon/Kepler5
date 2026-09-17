@@ -118,7 +118,7 @@ function ThreadChat({
           messages.map((m) => (
             <ChatMessageView
               key={m.id}
-              message={{ id: m.id, role: m.role === "user" ? "user" : "assistant", text: m.content }}
+              message={{ id: m.id, role: m.role === "user" ? "user" : "assistant", text: m.content, toolInvocations: m.toolInvocations }}
               isStreaming={isLoading && m.id === messages[messages.length - 1]?.id && m.role === "assistant"}
             />
           ))
@@ -135,6 +135,20 @@ function ThreadChat({
         >
           New reply <ArrowDown className="size-3" />
         </button>
+      ) : null}
+
+      {messages.length > 0 && !isLoading ? (
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap gap-2 px-6 pb-2">
+          {["Explain more simply", "Show me visually", "Step through Code Trace"].map((chip) => (
+            <button
+              key={chip}
+              onClick={() => append({ role: "user", content: chip })}
+              className="rounded-full border border-hairline bg-canvas px-3 py-1.5 text-[13px] font-body text-ink transition-colors hover:border-accent-text/50 hover:text-accent-text"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
       ) : null}
 
       <div className="mx-auto w-full max-w-3xl border-t border-hairline px-6 py-4">

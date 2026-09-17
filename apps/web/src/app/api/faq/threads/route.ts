@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateObject } from 'ai'
 import { z } from 'zod'
-import { db, faqThreads, modules } from '@kepler/db'
+import { db, faqThreads, modules, lectures, slides } from '@kepler/db'
 import { resolveTag } from '@kepler/db'
-import { eq, and, desc, sql, ne } from 'drizzle-orm'
+import { eq, and, desc, sql, ne, getTableColumns } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
 import { apiError } from '@/lib/errors'
 import { bedrock } from '@/lib/bedrock'
@@ -156,8 +156,14 @@ export async function GET(req: NextRequest) {
   }
 
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(faqThreads),
+      tagLectureName: lectures.title,
+      tagSlideIndex: slides.index,
+    })
     .from(faqThreads)
+    .leftJoin(lectures, eq(faqThreads.tagLectureId, lectures.id))
+    .leftJoin(slides, eq(faqThreads.tagSlideId, slides.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(faqThreads.endorsed), desc(faqThreads.createdAt), desc(faqThreads.id))
     .limit(limit + 1)

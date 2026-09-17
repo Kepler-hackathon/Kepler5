@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { streamText, convertToCoreMessages } from 'ai'
+import { z } from 'zod'
 import { db, chatThreads, chatMessages, lectures, slides, modules, courses, generationJobs } from '@kepler/db'
 import { eq, desc, asc, and } from 'drizzle-orm'
 import { getIdentity } from '@/lib/middleware/identity'
@@ -161,6 +162,55 @@ export async function POST(
     model: bedrock(process.env.BEDROCK_MODEL_MAIN ?? 'us.anthropic.claude-sonnet-5-20251001-v1:0'),
     system: systemPrompt,
     messages: coreMessages,
+    maxSteps: 2,
+    tools: {
+      show_widget: {
+        description:
+          'Embed an interactive visual widget inline when a visual explanation helps more than text alone — e.g. stepping through a recursive call stack, showing how a cost or value grows with n, or a predict-and-check scenario. Do NOT call this for simple conceptual questions that plain text answers well.',
+        parameters: z.object({
+          type: z.enum(['trace_stepper', 'concept_slider', 'predict_check']),
+          title: z.string().describe('Short title shown on the widget badge'),
+          // --- trace_stepper ---
+          code: z.array(z.string()).optional().describe('Source code lines, one element per line (trace_stepper only)'),
+          steps: z
+            .array(
+              z.object({
+                narration: z.string(),
+                highlightLine: z.number().int().min(1),
+                callStack: z.array(z.string()),
+                variables: z.record(z.string()),
+              }),
+            )
+            .optional()
+            .describe('Ordered trace steps (trace_stepper only)'),
+          // --- concept_slider ---
+          description: z.string().optional().describe('One-sentence explanation of what the slider shows (concept_slider only)'),
+          variable: z.string().optional().describe("The slider variable name, e.g. 'n' (concept_slider only)"),
+          unit: z.string().optional().describe("Unit label shown after the value, e.g. 'elements' (concept_slider only)"),
+          min: z.number().optional(),
+          max: z.number().optional(),
+          defaultValue: z.number().optional(),
+          series: z
+            .array(z.object({ label: z.string(), color: z.string().describe('CSS color string, e.g. #cc785c') }))
+            .optional()
+            .describe('Data series to plot (concept_slider only)'),
+          seriesValues: z
+            .array(z.array(z.number()))
+            .optional()
+            .describe(
+              'Pre-computed values: seriesValues[seriesIndex][tickIndex] where tickIndex = (value - min). Length must equal (max - min + 1) for each series. (concept_slider only)',
+            ),
+          // --- predict_check ---
+          scenario: z.string().optional().describe('The scenario/question the student must predict (predict_check only)'),
+          options: z
+            .array(z.object({ id: z.string(), label: z.string() }))
+            .optional()
+            .describe('Answer choices (predict_check only)'),
+          correctId: z.string().optional().describe('id of the correct option (predict_check only)'),
+          explanation: z.string().optional().describe('Explanation shown after checking (predict_check only)'),
+        }),
+      },
+    },
     onFinish: async ({ text, usage }) => {
       await db.insert(chatMessages).values({
         threadId: id,

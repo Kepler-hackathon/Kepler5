@@ -21,6 +21,9 @@ export interface FaqThreadRow {
   tagModuleId: string;
   tagLectureId: string | null;
   tagSlideId: string | null;
+  tagLevel: "module" | "lecture" | "slide";
+  tagLectureName: string | null;
+  tagSlideIndex: number | null;
   classification: "question" | "logistics" | "spam";
   endorsed: boolean;
   replyCount: number;
@@ -35,6 +38,7 @@ export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
   const [filter, setFilter] = React.useState<Filter>("all");
   const [includeLogistics, setIncludeLogistics] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [selectedModuleId, setSelectedModuleId] = React.useState("");
   const [threads, setThreads] = React.useState<FaqThreadRow[]>([]);
   const [upvoted, setUpvoted] = React.useState<Set<string>>(new Set());
   const [openThread, setOpenThread] = React.useState<FaqThreadRow | null>(null);
@@ -44,7 +48,10 @@ export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
     if (!identity) return;
     let cancelled = false;
     setLoading(true);
-    apiJson<{ threads: FaqThreadRow[] }>(`/api/faq/threads?includeLogistics=true&limit=50`)
+    const url = selectedModuleId
+      ? `/api/faq/threads?includeLogistics=true&limit=50&moduleId=${selectedModuleId}`
+      : `/api/faq/threads?includeLogistics=true&limit=50`;
+    apiJson<{ threads: FaqThreadRow[] }>(url)
       .then((data) => {
         if (!cancelled) setThreads(data.threads);
       })
@@ -55,7 +62,7 @@ export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
     return () => {
       cancelled = true;
     };
-  }, [identity]);
+  }, [identity, selectedModuleId]);
 
   const moduleName = React.useCallback(
     (moduleId: string) => modules.find((m) => m.id === moduleId)?.name ?? "Module",
@@ -120,6 +127,16 @@ export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
             />
             Include logistics
           </label>
+          <select
+            value={selectedModuleId}
+            onChange={(e) => setSelectedModuleId(e.target.value)}
+            className="rounded-[var(--radius-control)] border border-hairline bg-canvas px-3 py-1.5 text-[13px] font-body text-ink"
+          >
+            <option value="">All modules</option>
+            {modules.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
         </div>
         <ForumComposeDialog modules={modules} onPost={(thread) => setThreads((prev) => [thread, ...prev])} />
       </div>
@@ -155,6 +172,15 @@ export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
                   {t.endorsed ? <StatusIndicator kind="done" label="Instructor endorsed" /> : null}
                   {t.classification === "logistics" ? (
                     <span className="rounded-full border border-hairline px-2 py-0.5 text-[11px] text-muted font-body">Logistics</span>
+                  ) : null}
+                  {t.tagLevel === "slide" && t.tagSlideIndex !== null ? (
+                    <span className="rounded-full border border-accent-text/40 px-2 py-0.5 text-[11px] font-medium font-body text-accent-text">
+                      Slide {t.tagSlideIndex + 1}
+                    </span>
+                  ) : t.tagLevel === "lecture" && t.tagLectureName ? (
+                    <span className="rounded-full border border-hairline px-2 py-0.5 text-[11px] font-body text-muted">
+                      {t.tagLectureName}
+                    </span>
                   ) : null}
                 </div>
               </button>
