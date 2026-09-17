@@ -8,6 +8,8 @@ import type { ToolInvocation } from "ai";
 import { TraceStepperWidget } from "@/components/widgets/trace-stepper-widget";
 import { ConceptSliderWidget } from "@/components/widgets/concept-slider-widget";
 import { PredictCheckWidget } from "@/components/widgets/predict-check-widget";
+import { BigOChartWidget, type BigOFn } from "@/components/widgets/big-o-chart-widget";
+import { MemoryDiagramWidget } from "@/components/widgets/memory-diagram-widget";
 
 export interface ChatMessageData {
   id: string;
@@ -210,7 +212,7 @@ function MarkdownContent({ text }: { text: string }) {
 // ---------------------------------------------------------------------------
 
 type WidgetArgs = {
-  type: "trace_stepper" | "concept_slider" | "predict_check";
+  type: "trace_stepper" | "concept_slider" | "predict_check" | "big_o_chart" | "memory_diagram";
   title: string;
   // trace_stepper
   code?: string[];
@@ -229,6 +231,14 @@ type WidgetArgs = {
   options?: { id: string; label: string }[];
   correctId?: string;
   explanation?: string;
+  // big_o_chart
+  complexities?: { fn: BigOFn; color: string; highlighted?: boolean }[];
+  maxN?: number;
+  chartDescription?: string;
+  // memory_diagram
+  frames?: { label: string; variables: { name: string; type: string; value: string; pointsTo?: string }[] }[];
+  heapObjects?: { name: string; type: string; value: string }[];
+  diagramDescription?: string;
 };
 
 function WidgetRenderer({ widget }: { widget: WidgetArgs }) {
@@ -280,6 +290,30 @@ function WidgetRenderer({ widget }: { widget: WidgetArgs }) {
           options={widget.options}
           correctId={widget.correctId}
           explanation={widget.explanation}
+        />
+      </div>
+    );
+  }
+  if (widget.type === "big_o_chart" && widget.complexities && widget.complexities.length > 0) {
+    return (
+      <div className="mt-2">
+        <BigOChartWidget
+          title={widget.title}
+          description={widget.chartDescription}
+          complexities={widget.complexities}
+          maxN={widget.maxN}
+        />
+      </div>
+    );
+  }
+  if (widget.type === "memory_diagram" && widget.frames && widget.frames.length > 0) {
+    return (
+      <div className="mt-2">
+        <MemoryDiagramWidget
+          title={widget.title}
+          description={widget.diagramDescription}
+          frames={widget.frames}
+          heapObjects={widget.heapObjects}
         />
       </div>
     );

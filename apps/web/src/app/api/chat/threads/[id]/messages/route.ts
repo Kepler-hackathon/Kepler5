@@ -166,9 +166,9 @@ export async function POST(
     tools: {
       show_widget: {
         description:
-          'Embed an interactive visual widget inline when a visual explanation helps more than text alone — e.g. stepping through a recursive call stack, showing how a cost or value grows with n, or a predict-and-check scenario. Do NOT call this for simple conceptual questions that plain text answers well.',
+          'Embed an interactive visual widget inline when a visual explanation helps more than text alone. Widget types: trace_stepper (step through code with call stack + variables), concept_slider (show how a value changes as N grows), predict_check (multiple-choice prediction quiz), big_o_chart (plot and compare Big-O complexity curves — ideal for complexity/algorithm questions), memory_diagram (show stack frames and heap objects — ideal for Java variable/reference type questions). Do NOT use for simple conceptual questions that plain text answers well.',
         parameters: z.object({
-          type: z.enum(['trace_stepper', 'concept_slider', 'predict_check']),
+          type: z.enum(['trace_stepper', 'concept_slider', 'predict_check', 'big_o_chart', 'memory_diagram']),
           title: z.string().describe('Short title shown on the widget badge'),
           // --- trace_stepper ---
           code: z.array(z.string()).optional().describe('Source code lines, one element per line (trace_stepper only)'),
@@ -208,6 +208,39 @@ export async function POST(
             .describe('Answer choices (predict_check only)'),
           correctId: z.string().optional().describe('id of the correct option (predict_check only)'),
           explanation: z.string().optional().describe('Explanation shown after checking (predict_check only)'),
+          // --- big_o_chart ---
+          complexities: z
+            .array(z.object({
+              fn: z.enum(['O(1)', 'O(log N)', 'O(N)', 'O(N log N)', 'O(N²)', 'O(2^N)']),
+              color: z.string().describe('CSS color, e.g. #cc785c'),
+              highlighted: z.boolean().optional().describe('Emphasise this curve (the one being discussed)'),
+            }))
+            .optional()
+            .describe('Complexity curves to plot (big_o_chart only). Include 2–5 functions for contrast.'),
+          maxN: z.number().int().min(5).max(50).optional().describe('Upper N bound for x-axis, default 20 (big_o_chart only)'),
+          chartDescription: z.string().optional().describe('One-sentence context for the chart (big_o_chart only)'),
+          // --- memory_diagram ---
+          frames: z
+            .array(z.object({
+              label: z.string().describe("Frame name, e.g. 'main' or 'Stack Frame'"),
+              variables: z.array(z.object({
+                name: z.string(),
+                type: z.string().describe("Java type, e.g. 'int', 'String', 'int[]'"),
+                value: z.string().describe("Current value as string, e.g. '42', 'null', '0xA3'"),
+                pointsTo: z.string().optional().describe('Name of a heapObjects entry this reference points to'),
+              })),
+            }))
+            .optional()
+            .describe('Stack frames showing local variables (memory_diagram only)'),
+          heapObjects: z
+            .array(z.object({
+              name: z.string().describe('Identifier matching a pointsTo value in frames'),
+              type: z.string(),
+              value: z.string().describe('Contents, e.g. "[1, 2, 3]" or "Hello"'),
+            }))
+            .optional()
+            .describe('Objects allocated on the heap (memory_diagram only)'),
+          diagramDescription: z.string().optional().describe('One-sentence context for the diagram (memory_diagram only)'),
         }),
         // Without execute, the AI SDK's multi-step loop tries a second Bedrock call with an
         // undefined tool result, which hangs the stream. Returning a simple ack lets step 2
