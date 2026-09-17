@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppNav } from "@/components/nav/app-nav";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SkeletonCard } from "@/components/ui/skeleton";
@@ -22,14 +22,11 @@ interface ApiCourse {
 
 export function CourseLanding({ courseId }: { courseId: string }) {
   const identity = useIdentity();
-  const router = useRouter();
   const [course, setCourse] = React.useState<ApiCourse | null>(null);
   const [modules, setModules] = React.useState<ApiModule[] | null>(null);
   const [reviewPendingCount, setReviewPendingCount] = React.useState<number | undefined>(undefined);
   const [error, setError] = React.useState<string | null>(null);
   const [view, setView] = React.useState<"grid" | "flow">("grid");
-  const [moduleName, setModuleName] = React.useState("");
-  const [creatingModule, setCreatingModule] = React.useState(false);
 
   const load = React.useCallback(() => {
     setError(null);
@@ -52,23 +49,6 @@ export function CourseLanding({ courseId }: { courseId: string }) {
 
   const loading = course === null && modules === null && !error;
   const role = identity?.role ?? "student";
-
-  async function createModule(e: React.FormEvent) {
-    e.preventDefault();
-    if (!moduleName.trim()) return;
-    setCreatingModule(true);
-    try {
-      const mod = await apiJson<ApiModule>("/api/modules", {
-        method: "POST",
-        body: JSON.stringify({ courseId, name: moduleName.trim() }),
-      });
-      router.push(`/course/${courseId}/module/${mod.id}`);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create module");
-    } finally {
-      setCreatingModule(false);
-    }
-  }
 
   if (error) {
     return (
@@ -143,6 +123,14 @@ export function CourseLanding({ courseId }: { courseId: string }) {
                       {modules.map((m) => (
                         <ModuleCard key={m.id} module={m} courseId={courseId} role={role} />
                       ))}
+                      {role === "teacher" ? (
+                        <Link href={`/course/${courseId}/module/new`}>
+                          <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border border-dashed border-hairline p-6 text-center transition-colors hover:border-body">
+                            <span className="text-[22px] leading-none text-muted">+</span>
+                            <span className="text-[14px] font-medium font-body text-muted">Add Module</span>
+                          </div>
+                        </Link>
+                      ) : null}
                     </div>
                   ) : (
                     <FlowView modules={modules} courseId={courseId} />
@@ -153,17 +141,9 @@ export function CourseLanding({ courseId }: { courseId: string }) {
               <div className="mt-16 flex flex-col items-center gap-4 text-center">
                 <h2 className="text-[24px]">No modules yet</h2>
                 {role === "teacher" ? (
-                  <form onSubmit={createModule} className="flex w-full max-w-sm gap-2">
-                    <input
-                      value={moduleName}
-                      onChange={(e) => setModuleName(e.target.value)}
-                      placeholder="Module name"
-                      className="flex-1 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-3 py-2 text-[14px] font-body"
-                    />
-                    <Button type="submit" disabled={creatingModule || !moduleName.trim()}>
-                      {creatingModule ? "Creating…" : "Create module"}
-                    </Button>
-                  </form>
+                  <Button asChild>
+                    <Link href={`/course/${courseId}/module/new`}>+ Add Module</Link>
+                  </Button>
                 ) : (
                   <p className="max-w-sm text-[15px] text-muted font-body">
                     Your instructor hasn&rsquo;t published modules yet. Check back soon.
