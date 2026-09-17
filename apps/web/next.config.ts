@@ -2,7 +2,7 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  distDir: '/tmp/next-build',
+  distDir: '.next',
   transpilePackages: ['@kepler/widgets'],
 }
 
