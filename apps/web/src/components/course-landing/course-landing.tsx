@@ -156,7 +156,7 @@ export function CourseLanding({ courseId }: { courseId: string }) {
         activeHref={`/course/${courseId}`}
       />
 
-      <main className="w-full pt-16 bg-canvas min-h-screen">
+      <main className="w-full bg-canvas min-h-screen">
         <div className="flex flex-col w-full px-6 lg:px-8 py-10 max-w-[1400px] mx-auto">
           {loading ? (
             <div className="space-y-8">

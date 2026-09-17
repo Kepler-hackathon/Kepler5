@@ -4,9 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeplerMark } from "@/components/nav/kepler-mark";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useIdentity } from "@/lib/identity";
+import { useIdentity, setStoredRole, type Role } from "@/lib/identity";
 import { apiJson, ApiError } from "@/lib/api-client";
 import { CreateCourseDialog } from "./create-course-dialog";
 
@@ -23,6 +24,18 @@ export function CourseSelector() {
   const router = useRouter();
   const [courses, setCourses] = React.useState<ApiCourse[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [role, setRole] = React.useState<Role>("student");
+
+  React.useEffect(() => {
+    const stored = window.localStorage.getItem("keplerlearn:last-role");
+    if (stored === "teacher" || stored === "student") setRole(stored);
+  }, []);
+
+  function switchRole(next: Role) {
+    setRole(next);
+    setStoredRole(next);
+    window.dispatchEvent(new CustomEvent("keplerlearn:role-change", { detail: next }));
+  }
 
   const load = React.useCallback(() => {
     apiJson<{ courses: ApiCourse[] }>("/api/courses")
@@ -41,12 +54,38 @@ export function CourseSelector() {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <div className="border-b border-hairline">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 px-6 py-5">
-          <KeplerMark className="size-7" />
-          <span className="font-display text-[22px] text-ink">KeplerLearn</span>
+      <nav className="sticky top-0 z-20 flex h-16 items-center justify-between gap-6 border-b border-hairline bg-canvas px-6">
+        <div className="flex items-center gap-3">
+          <Link href="/courses" className="flex shrink-0 items-center gap-2">
+            <KeplerMark className="size-6" />
+            <span className="font-display text-[20px] text-ink">KeplerLearn</span>
+          </Link>
         </div>
-      </div>
+        <div className="hidden items-center gap-1 md:flex">
+          {role === "student" ? (
+            <>
+              <span className="rounded-full bg-surface-card px-3.5 py-1.5 text-[13px] font-medium font-body text-ink">Courses</span>
+              <Link href="/quizzes" className="rounded-full px-3.5 py-1.5 text-[13px] font-medium font-body text-muted hover:text-ink transition-colors">Practice Quizzes</Link>
+              <Link href="/progress" className="rounded-full px-3.5 py-1.5 text-[13px] font-medium font-body text-muted hover:text-ink transition-colors">My Progress</Link>
+            </>
+          ) : (
+            <>
+              <span className="rounded-full bg-surface-card px-3.5 py-1.5 text-[13px] font-medium font-body text-ink">Courses</span>
+            </>
+          )}
+        </div>
+        <div className="shrink-0">
+          <SegmentedControl
+            label="Role"
+            value={role}
+            onChange={switchRole}
+            options={[
+              { value: "student", label: "Student" },
+              { value: "teacher", label: "Teacher" },
+            ]}
+          />
+        </div>
+      </nav>
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1>Your courses</h1>
