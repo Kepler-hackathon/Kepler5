@@ -11,6 +11,7 @@ out/
 dist/
 build/
 coverage/
+cdk.out/
 
 # Temp / cache
 tmp/
@@ -43,6 +44,10 @@ aws/
 .vscode/
 *.swp
 *.swo
+
+# Python
+__pycache__/
+*.pyc
 
 # Drizzle generated (keep migrations, ignore studio metadata)
 drizzle/meta/.snapshot.json

@@ -1,15 +1,9 @@
-import { db } from '@kepler/db'
-import { sql } from 'drizzle-orm'
-import { NextResponse } from 'next/server'
-
+// ALB target health check: always 200 when process is up; /api/health/deep is the strict DB variant.
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  try {
-    const rows = await db.execute(sql`SELECT version() AS version`)
-    const version = (rows[0] as { version: string }).version
-    return NextResponse.json({ ok: true, version })
-  } catch {
-    return NextResponse.json({ ok: false, version: null }, { status: 503 })
-  }
+  return Response.json(
+    { ok: true, version: process.env.APP_VERSION ?? 'dev', region: process.env.AWS_REGION ?? null },
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }

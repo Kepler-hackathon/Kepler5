@@ -1,0 +1,16 @@
+{
+  "name": "kepler-generator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lambda worker: on-demand generation jobs (SQS) and process-module Step Functions tasks — docs/backend-plan.md §8, §9",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.25.12",
+    "typescript": "^5.7.0"
+  }
+}
