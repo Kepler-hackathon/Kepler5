@@ -5,7 +5,9 @@ export default async function LecturePage(props: PageProps<"/lecture/[lectureId]
   const { slide } = await props.searchParams;
 
   const requested = Array.isArray(slide) ? slide[0] : slide;
-  const initialSlide = Number(requested) || 1;
+  // null (no ?slide= given, e.g. "Start"/"Resume Lecture") tells SlideViewer to look up saved
+  // progress and resume there, instead of always opening at slide 1.
+  const initialSlide = requested ? Number(requested) || 1 : null;
 
   return <SlideViewer lectureId={lectureId} initialSlide={initialSlide} />;
 }
