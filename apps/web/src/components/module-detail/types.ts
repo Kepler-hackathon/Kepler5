@@ -15,6 +15,11 @@ export interface ApiModuleDetail {
   name: string;
   overviewMd: string | null;
   objectives: string[];
+  scheduleNotes: string | null;
   status: "draft" | "processing" | "needs_attention" | "ready_to_review" | "published";
   orderIndex: number | null;
+  aiOptIn: boolean;
+  itemsPerLecture: number;
+  createdBy: string | null;
+  publishedAt: string | null;
 }

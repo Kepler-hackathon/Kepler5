@@ -14,6 +14,8 @@ function statusFor(m: ApiModule) {
 
 export function ModuleCard({ module: m, courseId, role = "student" }: { module: ApiModule; courseId: string; role?: "student" | "teacher" }) {
   const status = statusFor(m);
+  const isDraft = role === "teacher" && m.status === "draft";
+  const href = isDraft ? `/course/${courseId}/module/${m.id}/wizard` : `/course/${courseId}/module/${m.id}`;
 
   return (
     <Card className="flex flex-col p-6">
@@ -30,7 +32,7 @@ export function ModuleCard({ module: m, courseId, role = "student" }: { module: 
 
       <div className="mt-5">
         <Button asChild variant={role === "teacher" ? "ghost" : "primary"} size={role === "teacher" ? "sm" : "md"} className={role === "teacher" ? "" : "w-full"}>
-          <Link href={`/course/${courseId}/module/${m.id}`}>{role === "teacher" ? "Review" : "Open Module"}</Link>
+          <Link href={href}>{isDraft ? "Resume Setup" : role === "teacher" ? "Review" : "Open Module"}</Link>
         </Button>
       </div>
     </Card>

@@ -7,6 +7,33 @@ import { apiError } from '@/lib/errors'
 
 export const dynamic = 'force-dynamic'
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const identity = getIdentity(req)
+  if (!identity) return apiError('identity_required', 'Identity headers required', 400)
+  const denied = enforceTeacher(identity)
+  if (denied) return denied
+
+  const { id } = await params
+
+  const rows = await db
+    .select({
+      id: knowledgeAnchors.id,
+      fileId: knowledgeAnchors.fileId,
+      kind: knowledgeAnchors.kind,
+      ingestStatus: knowledgeAnchors.ingestStatus,
+      createdAt: knowledgeAnchors.createdAt,
+      fileName: files.originalName,
+    })
+    .from(knowledgeAnchors)
+    .innerJoin(files, eq(files.id, knowledgeAnchors.fileId))
+    .where(eq(knowledgeAnchors.moduleId, id))
+
+  return NextResponse.json({ anchors: rows })
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

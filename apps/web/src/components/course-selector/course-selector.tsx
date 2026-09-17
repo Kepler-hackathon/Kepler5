@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useIdentity } from "@/lib/identity";
 import { apiJson, ApiError } from "@/lib/api-client";
+import { CreateCourseDialog } from "./create-course-dialog";
 
 interface ApiCourse {
   id: string;
@@ -22,8 +23,6 @@ export function CourseSelector() {
   const router = useRouter();
   const [courses, setCourses] = React.useState<ApiCourse[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [creating, setCreating] = React.useState(false);
-  const [name, setName] = React.useState("");
 
   const load = React.useCallback(() => {
     apiJson<{ courses: ApiCourse[] }>("/api/courses")
@@ -36,21 +35,8 @@ export function CourseSelector() {
     load();
   }, [identity, load]);
 
-  async function createCourse(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setCreating(true);
-    try {
-      const course = await apiJson<ApiCourse>("/api/courses", {
-        method: "POST",
-        body: JSON.stringify({ name: name.trim() }),
-      });
-      router.push(`/course/${course.id}`);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create course");
-    } finally {
-      setCreating(false);
-    }
+  function onCreated(course: ApiCourse) {
+    router.push(`/course/${course.id}`);
   }
 
   return (
@@ -74,17 +60,10 @@ export function CourseSelector() {
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
             <h2 className="text-[20px]">No courses yet</h2>
             {identity?.role === "teacher" ? (
-              <form onSubmit={createCourse} className="mt-2 flex w-full max-w-sm gap-2">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Course name"
-                  className="flex-1 rounded-[var(--radius-control)] border border-hairline bg-surface-card px-3 py-2 text-[14px] font-body"
-                />
-                <Button type="submit" disabled={creating || !name.trim()}>
-                  {creating ? "Creating…" : "Create course"}
-                </Button>
-              </form>
+              <CreateCourseDialog
+                trigger={<Button variant="primary">Create your first course</Button>}
+                onCreated={onCreated}
+              />
             ) : (
               <p className="text-[14px] text-muted font-body">Check back once your instructor creates one.</p>
             )}
@@ -104,6 +83,20 @@ export function CourseSelector() {
                 </Card>
               </Link>
             ))}
+            {identity?.role === "teacher" ? (
+              <CreateCourseDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="flex h-full min-h-[140px] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border border-dashed border-hairline p-6 text-center transition-colors hover:border-body"
+                  >
+                    <span className="text-[22px] leading-none text-muted">+</span>
+                    <span className="text-[14px] font-medium font-body text-muted">New Course</span>
+                  </button>
+                }
+                onCreated={onCreated}
+              />
+            ) : null}
           </div>
         )}
       </main>
