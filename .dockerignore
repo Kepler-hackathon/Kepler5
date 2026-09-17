@@ -8,5 +8,5 @@ docs
 aws
 awscliv2.zip
 docker-compose.yml
-workers
+workers/deck-parser
 pnpm-lock.yaml.bak

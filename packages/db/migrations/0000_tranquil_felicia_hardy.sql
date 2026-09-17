@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 CREATE TYPE "public"."cache_status_t" AS ENUM('generating', 'ready', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."chat_scope_t" AS ENUM('slide', 'lecture', 'module', 'course');--> statement-breakpoint
 CREATE TYPE "public"."event_type_t" AS ENUM('slide_view', 'quiz_answer', 'quiz_skip', 'remediation_open', 'remediation_feedback', 'widget_publish', 'widget_upvote', 'faq_post', 'faq_reply', 'faq_upvote', 'chat_message', 'practice_complete');--> statement-breakpoint

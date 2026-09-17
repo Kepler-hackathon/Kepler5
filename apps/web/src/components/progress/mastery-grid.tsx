@@ -5,7 +5,13 @@ import { Table } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { Tooltip } from "@/components/ui/tooltip";
 import { StatusGlyph } from "@/components/ui/status-indicator";
-import type { MasteryCell } from "@/lib/data/progress";
+
+export interface MasteryCell {
+  lectureId: string;
+  lectureTitle: string;
+  attempts: number;
+  correct: number;
+}
 
 function statusFor(cell: MasteryCell) {
   if (cell.attempts < 3) return { kind: "not-started" as const, label: "Not enough data" };
@@ -45,10 +51,8 @@ export function MasteryGrid({ cells }: { cells: MasteryCell[] }) {
             {cells.map((cell) => {
               const status = statusFor(cell);
               return (
-                <tr key={cell.lectureNumber} className="border-b border-hairline">
-                  <td className="py-2 pr-4 text-ink">
-                    {cell.lectureNumber}. {cell.lectureTitle}
-                  </td>
+                <tr key={cell.lectureId} className="border-b border-hairline">
+                  <td className="py-2 pr-4 text-ink">{cell.lectureTitle}</td>
                   <td className="py-2 pr-4 text-body">{status.label}</td>
                   <td className="py-2 text-body">
                     {cell.attempts === 0 ? "—" : `${cell.correct} of ${cell.attempts} correct`}
@@ -59,12 +63,12 @@ export function MasteryGrid({ cells }: { cells: MasteryCell[] }) {
           </tbody>
         </table>
       ) : (
-        <div className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-9">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {cells.map((cell) => {
             const status = statusFor(cell);
             return (
               <Tooltip
-                key={cell.lectureNumber}
+                key={cell.lectureId}
                 content={
                   <span>
                     {cell.lectureTitle}
@@ -75,15 +79,15 @@ export function MasteryGrid({ cells }: { cells: MasteryCell[] }) {
               >
                 <button
                   className={cn(
-                    "flex aspect-square items-center justify-center rounded-[var(--radius-control)] border border-hairline text-[11px] font-medium font-body",
+                    "flex items-center justify-between gap-2 rounded-[var(--radius-control)] border border-hairline px-3 py-2 text-left text-[12px] font-medium font-body",
                     status.kind === "done" && "bg-success/15 text-success-text",
                     status.kind === "in-progress" && "bg-amber-fill/25 text-warning-text",
                     status.kind === "attention" && "bg-error/12 text-error",
                     status.kind === "not-started" && "bg-hairline/40 text-muted"
                   )}
-                  aria-label={`Lecture ${cell.lectureNumber}: ${cell.lectureTitle}, ${status.label}`}
+                  aria-label={`${cell.lectureTitle}, ${status.label}`}
                 >
-                  {cell.lectureNumber}
+                  <span className="truncate">{cell.lectureTitle}</span>
                 </button>
               </Tooltip>
             );

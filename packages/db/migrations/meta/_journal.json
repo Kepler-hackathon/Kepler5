@@ -8,6 +8,13 @@
       "when": 1789611983538,
       "tag": "0000_tranquil_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789611983539,
+      "tag": "0001_extensions_and_generated",
+      "breakpoints": true
     }
   ]
 }

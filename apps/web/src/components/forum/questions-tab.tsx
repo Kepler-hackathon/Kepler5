@@ -7,31 +7,86 @@ import { Avatar } from "@/components/ui/avatar";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { ForumComposeDialog } from "./forum-compose-dialog";
 import { ThreadDetailDialog } from "./thread-detail-dialog";
-import { forumThreads, type ForumThread } from "@/lib/data/forum";
+import { apiJson } from "@/lib/api-client";
+import { useIdentity } from "@/lib/identity";
+import { displayNameFor } from "@/lib/display-name";
+import { timeAgo } from "@/lib/time-ago";
+import type { ModuleOption } from "./forum";
+
+export interface FaqThreadRow {
+  id: string;
+  authorId: string;
+  title: string;
+  bodyMd: string;
+  tagModuleId: string;
+  tagLectureId: string | null;
+  tagSlideId: string | null;
+  classification: "question" | "logistics" | "spam";
+  endorsed: boolean;
+  replyCount: number;
+  upvoteCount: number;
+  createdAt: string;
+}
 
 type Filter = "all" | "unanswered" | "endorsed";
 
-export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
+export function QuestionsTab({ modules }: { modules: ModuleOption[] }) {
+  const identity = useIdentity();
   const [filter, setFilter] = React.useState<Filter>("all");
   const [includeLogistics, setIncludeLogistics] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [threads, setThreads] = React.useState<FaqThreadRow[]>([]);
   const [upvoted, setUpvoted] = React.useState<Set<string>>(new Set());
-  const [openThread, setOpenThread] = React.useState<ForumThread | null>(null);
-  const [extraThreads, setExtraThreads] = React.useState<ForumThread[]>([]);
+  const [openThread, setOpenThread] = React.useState<FaqThreadRow | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
-  const filtered = [...extraThreads, ...forumThreads]
-    .filter((t) => includeLogistics || !t.isLogistics)
+  React.useEffect(() => {
+    if (!identity) return;
+    let cancelled = false;
+    setLoading(true);
+    apiJson<{ threads: FaqThreadRow[] }>(`/api/faq/threads?includeLogistics=true&limit=50`)
+      .then((data) => {
+        if (!cancelled) setThreads(data.threads);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [identity]);
+
+  const moduleName = React.useCallback(
+    (moduleId: string) => modules.find((m) => m.id === moduleId)?.name ?? "Module",
+    [modules],
+  );
+
+  const filtered = threads
+    .filter((t) => includeLogistics || t.classification !== "logistics")
     .filter((t) => (filter === "unanswered" ? t.replyCount === 0 : filter === "endorsed" ? t.endorsed : true))
     .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => Number(b.endorsed) - Number(a.endorsed));
 
-  function toggleUpvote(id: string) {
-    setUpvoted((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  async function toggleUpvote(id: string) {
+    // Optimistic: real count comes back from the API, this just avoids double-clicks feeling dead.
+    setUpvoted((prev) => new Set(prev).add(id));
+    try {
+      const result = await apiJson<{ upvoted: boolean; upvoteCount: number }>(`/api/faq/threads/${id}/upvote`, { method: "POST" });
+      setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, upvoteCount: result.upvoteCount } : t)));
+      setUpvoted((prev) => {
+        const next = new Set(prev);
+        if (result.upvoted) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    } catch {
+      setUpvoted((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -66,27 +121,7 @@ export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
             Include logistics
           </label>
         </div>
-        <ForumComposeDialog
-          onPost={(title) => {
-            setExtraThreads((prev) => [
-              {
-                id: `local-${Date.now()}`,
-                title,
-                author: "You",
-                timeAgo: "just now",
-                endorsed: false,
-                replyCount: 0,
-                upvotes: 0,
-                scope: "lecture" as const,
-                moduleNumber: 1,
-                isLogistics: false,
-                body: "",
-              },
-              ...prev,
-            ]);
-            onPost?.(title);
-          }}
-        />
+        <ForumComposeDialog modules={modules} onPost={(thread) => setThreads((prev) => [thread, ...prev])} />
       </div>
 
       <div className="relative mt-4">
@@ -100,7 +135,9 @@ export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
       </div>
 
       <div className="mt-4 space-y-2">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="py-8 text-center text-[14px] text-muted font-body">Loading…</p>
+        ) : filtered.length === 0 ? (
           <p className="py-8 text-center text-[14px] text-muted font-body">No matches · clear filters</p>
         ) : (
           filtered.map((t) => (
@@ -111,12 +148,12 @@ export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
               <button onClick={() => setOpenThread(t)} className="min-w-0 flex-1 text-left">
                 <p className="text-[15px] font-medium font-body text-ink">{t.title}</p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                  <Avatar name={t.author} size="sm" />
+                  <Avatar name={displayNameFor(t.authorId, identity?.userId)} size="sm" />
                   <span className="text-[12px] text-muted font-body">
-                    {t.author} · {t.timeAgo} · Module {t.moduleNumber}
+                    {displayNameFor(t.authorId, identity?.userId)} · {timeAgo(t.createdAt)} · {moduleName(t.tagModuleId)}
                   </span>
                   {t.endorsed ? <StatusIndicator kind="done" label="Instructor endorsed" /> : null}
-                  {t.isLogistics ? (
+                  {t.classification === "logistics" ? (
                     <span className="rounded-full border border-hairline px-2 py-0.5 text-[11px] text-muted font-body">Logistics</span>
                   ) : null}
                 </div>
@@ -130,14 +167,19 @@ export function QuestionsTab({ onPost }: { onPost?: (title: string) => void }) {
                 )}
               >
                 <CaretUp className="size-3.5" />
-                {t.upvotes + (upvoted.has(t.id) ? 1 : 0)}
+                {t.upvoteCount}
               </button>
             </div>
           ))
         )}
       </div>
 
-      <ThreadDetailDialog thread={openThread} open={openThread !== null} onOpenChange={(open) => !open && setOpenThread(null)} />
+      <ThreadDetailDialog
+        thread={openThread}
+        open={openThread !== null}
+        onOpenChange={(open) => !open && setOpenThread(null)}
+        onReplyPosted={() => setThreads((prev) => prev.map((t) => (t.id === openThread?.id ? { ...t, replyCount: t.replyCount + 1 } : t)))}
+      />
     </div>
   );
 }
