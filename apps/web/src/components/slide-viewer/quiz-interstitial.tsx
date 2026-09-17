@@ -81,12 +81,12 @@ export function QuizInterstitial({
               disabled={answered}
               onClick={() => setSelected(option.id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-[var(--radius-control)] border bg-canvas px-4 py-3 text-left text-[15px] font-body transition-colors",
-                !answered && isSelected && "border-button-primary",
-                !answered && !isSelected && "border-hairline hover:border-body",
+                "flex w-full items-center gap-3 rounded-[var(--radius-control)] border px-4 py-3 text-left text-[15px] font-body transition-colors",
+                !answered && isSelected && "border-button-primary bg-button-primary/8",
+                !answered && !isSelected && "border-hairline bg-canvas hover:border-body",
                 showResult && option.correct && "border-success bg-success/10",
                 showResult && !option.correct && "border-error bg-error/10",
-                answered && !isSelected && "border-hairline opacity-60"
+                answered && !isSelected && "border-hairline bg-canvas opacity-60"
               )}
             >
               <KeyboardHint>{i + 1}</KeyboardHint>
